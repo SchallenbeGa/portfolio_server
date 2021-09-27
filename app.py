@@ -33,20 +33,10 @@ def save(data):
 			this_csv_file.write(line)
 			this_csv_file.write('\n')
 
-save(req(money,30))
-
-# Fetch the Apple stock data
-data = pd.read_csv('tst.csv').set_index('Date')
-data.index = pd.to_datetime(data.index)
-
 
 def sma(data, n):
 	sma = data.rolling(window=n).mean()
 	return pd.DataFrame(sma)
-
-n = [10,20,50]
-for i in n:
-	data[f'sma_{i}'] = sma(data['Close'], i)
 
 def implement_sma_strategy(data, short_window, long_window,joker,budget_l):
 
@@ -104,6 +94,14 @@ def implement_sma_strategy(data, short_window, long_window,joker,budget_l):
 		
 	return buy_price, sell_price, sma_signal,trade,(profit)
 
+save(req(money,30))
+
+data = pd.read_csv('tst.csv').set_index('Date')
+data.index = pd.to_datetime(data.index)
+
+n = [10,20,50]
+for i in n:
+	data[f'sma_{i}'] = sma(data['Close'], i)
 
 @app.route("/")
 def hello():
@@ -127,7 +125,7 @@ def hello():
 	plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'BUY SIGNAL')
 	plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'SELL SIGNAL')
 	plt.legend(loc = 'upper left')
-	plt.title('SMA 10-20 reverse cross \n '+money+'\n For '+str(budget_l) +' return :'+str(sum(trade)))
+	plt.title('SMA 10-20 reverse cross \n currency : '+money+' & budget : '+str(budget_l) +'\n profit :'+str(sum(trade))+'\n avg profit : '+str(sum(trade)/len(trade)))
 	buf = BytesIO()
 	plt.savefig(buf, format="png")
 	# Embed the result in the html output.
