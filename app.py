@@ -1,8 +1,15 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
 import datetime
 from pycoingecko import CoinGeckoAPI
+from flask import Flask
+from matplotlib.figure import Figure
+
+app = Flask(__name__)
+
 
 cg = CoinGeckoAPI()
 
@@ -97,21 +104,32 @@ def implement_sma_strategy(data, short_window, long_window,joker,budget_l):
 		
 	return buy_price, sell_price, sma_signal,trade,(profit)
 
-sma_10 = data['sma_10']
-sma_20 = data['sma_20']
-sma_50 = data['sma_50']
 
-buy_price, sell_price, signal,trade,profit = implement_sma_strategy(data['Close'], sma_20, sma_10, sma_50,budget_l)
+@app.route("/")
+def hello():
 
-print(trade)
+	sma_10 = data['sma_10']
+	sma_20 = data['sma_20']
+	sma_50 = data['sma_50']
 
-plt.plot(data['Close'], alpha = 0.3, label = 'data')
-plt.plot(sma_10, alpha = 0.6, label = 'SMA 10')
-plt.plot(sma_20, alpha = 0.6, label = 'SMA 20')
-plt.plot(sma_50, alpha = 0.6, label = 'SMA 50')
-plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'BUY SIGNAL')
-plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'SELL SIGNAL')
-plt.legend(loc = 'upper left')
-plt.title('SMA 10-20 reverse cross \n '+money+'\n For '+str(budget_l) +' return :'+str(sum(trade)))
+	buy_price, sell_price, signal,trade,profit = implement_sma_strategy(data['Close'], sma_20, sma_10, sma_50,budget_l)
 
-plt.show()
+	print(trade)
+
+	f = plt.figure()
+	f.set_figwidth(15)
+	f.set_figheight(7)
+
+	plt.plot(data['Close'], alpha = 0.3, label = 'data')
+	plt.plot(sma_10, alpha = 0.6, label = 'SMA 10')
+	plt.plot(sma_20, alpha = 0.6, label = 'SMA 20')
+	plt.plot(sma_50, alpha = 0.6, label = 'SMA 50')
+	plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'BUY SIGNAL')
+	plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'SELL SIGNAL')
+	plt.legend(loc = 'upper left')
+	plt.title('SMA 10-20 reverse cross \n '+money+'\n For '+str(budget_l) +' return :'+str(sum(trade)))
+	buf = BytesIO()
+	plt.savefig(buf, format="png")
+	# Embed the result in the html output.
+	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
+	return f"<img src='data:image/png;base64,{dat}'/>"
