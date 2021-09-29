@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +16,7 @@ app = Flask(__name__)
 cg = CoinGeckoAPI()
 
 days = "1"
-money = "qtum"
+money = "cardano"
 budget_l = 1000
 
 def req(money,days):
@@ -47,7 +49,7 @@ def implement_sma_strategy(data, short_window, long_window,joker,budget_l):
 	sell_price = []
 	sma_signal = []
 	last_signal = 0
-	signal = 0
+	signal = -1
 	profit = budget_l
 	trade = []
 	dispo = 0
@@ -94,26 +96,21 @@ def implement_sma_strategy(data, short_window, long_window,joker,budget_l):
 		
 	return buy_price, sell_price, sma_signal,trade,(profit)
 
-save(req(money,30))
-
-data = pd.read_csv('tst.csv').set_index('Date')
-data.index = pd.to_datetime(data.index)
-
-n = [10,20,50]
-for i in n:
-	data[f'sma_{i}'] = sma(data['Close'], i)
-
 @app.route("/")
 def hello():
+
+	data = pd.read_csv('tst.csv').set_index('Date')
+	data.index = pd.to_datetime(data.index)
+
+	n = [10,20,50]
+	for i in n:
+		data[f'sma_{i}'] = sma(data['Close'], i)
 
 	sma_10 = data['sma_10']
 	sma_20 = data['sma_20']
 	sma_50 = data['sma_50']
 
 	buy_price, sell_price, signal,trade,profit = implement_sma_strategy(data['Close'], sma_20, sma_10, sma_50,budget_l)
-
-	print(trade)
-
 	f = plt.figure()
 	f.set_figwidth(15)
 	f.set_figheight(7)
@@ -126,6 +123,39 @@ def hello():
 	plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'SELL SIGNAL')
 	plt.legend(loc = 'upper left')
 	plt.title('SMA 10-20 reverse cross \n currency : '+money+' & budget : '+str(budget_l) +'\n profit :'+str(sum(trade))+'\n avg profit : '+str(sum(trade)/len(trade)))
+	buf = BytesIO()
+	plt.savefig(buf, format="png")
+	# Embed the result in the html output.
+	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
+	return f"<img src='data:image/png;base64,{dat}'/>"
+
+@app.route("/<name>")
+def currency(name):
+	save(req(name,30))
+	data = pd.read_csv('tst.csv').set_index('Date')
+	data.index = pd.to_datetime(data.index)
+
+	n = [10,20,50]
+	for i in n:
+		data[f'sma_{i}'] = sma(data['Close'], i)
+
+	sma_10 = data['sma_10']
+	sma_20 = data['sma_20']
+	sma_50 = data['sma_50']
+
+	buy_price, sell_price, signal,trade,profit = implement_sma_strategy(data['Close'], sma_20, sma_10, sma_50,budget_l)
+	f = plt.figure()
+	f.set_figwidth(15)
+	f.set_figheight(7)
+
+	plt.plot(data['Close'], alpha = 0.3, label = 'data')
+	plt.plot(sma_10, alpha = 0.6, label = 'SMA 10')
+	plt.plot(sma_20, alpha = 0.6, label = 'SMA 20')
+	plt.plot(sma_50, alpha = 0.6, label = 'SMA 50')
+	plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'BUY SIGNAL')
+	plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'SELL SIGNAL')
+	plt.legend(loc = 'upper left')
+	plt.title('SMA 10-20 reverse cross \n currency : '+name+' & budget : '+str(budget_l) +'\n profit :'+str(sum(trade))+'\n avg profit : '+str(sum(trade)/len(trade)))
 	buf = BytesIO()
 	plt.savefig(buf, format="png")
 	# Embed the result in the html output.
