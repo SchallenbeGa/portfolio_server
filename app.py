@@ -7,7 +7,7 @@ import base64
 from io import BytesIO
 import datetime
 from pycoingecko import CoinGeckoAPI
-from flask import Flask
+from flask import Flask,render_template
 from matplotlib.figure import Figure
 
 app = Flask(__name__)
@@ -22,6 +22,11 @@ budget_l = 1000
 #get money info from coingecko
 def req(money,days):
 	data = cg.get_coin_ohlc_by_id(id=money, vs_currency='usd',days=days)
+	return data
+
+def get_coin_list():
+	data = cg.get_coins_list()
+	#print(data)
 	return data
 
 #format & save data as tst.csv
@@ -60,6 +65,7 @@ def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):
 	slic=budget_l/nb_trade
 	profit = budget_l
 	trade = []
+	trade_r = []
 	dispo = 0
 
 	for i in range(len(data)):
@@ -84,6 +90,7 @@ def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):
 					sma_signal.append(0)
 				else:
 					sell_price.append(data[i])
+					tr = {"buy_price":min(last_buy)}
 					profit += (slic/min(last_buy))*data[i] - slic
 					last_sell.append(data[i])
 					signal+=1
@@ -91,12 +98,13 @@ def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):
 					sma_signal.append(-1)
 					la = last_buy.pop(-1)
 					trade.append(((slic/la)*data[i])-slic)
+					tr["quantity"] = slic/la
+					tr["sell_price"] = data[i]
+					tr["profit"] = ((slic/la)*data[i])-slic
+					trade_r.append(tr)
 					if(ad==1):
 						slic=(slic/la)*data[i]
-					if(len(last_buy)==0):
-						print("buy at : ",last_signal," sell at : ",data[i]," for (",slic/la,") :",(slic/la)*data[i]," profit : ",profit-budget_l)
-					else:
-						print("buy at : ",min(last_buy)," sell at : ",data[i]," for (",slic/la,") :",(slic/la)*data[i]," profit : ",profit-budget_l)
+					
 			else:
 				buy_price.append(np.nan)
 				sell_price.append(np.nan)
@@ -106,7 +114,7 @@ def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):
 			sell_price.append(np.nan)
 			sma_signal.append(0)
 	
-	return buy_price, sell_price, sma_signal,trade,(profit-budget_l)
+	return buy_price, sell_price, sma_signal,trade,trade_r,(profit-budget_l)
 
 @app.route("/<version>/<name>")
 def currency(version,name):
@@ -129,7 +137,7 @@ def currency(version,name):
 	  "3":s2(data['Close'], sma_20, sma_10, sma_50,budget_l,2,1)
       }
     
-	buy_price, sell_price, signal,trade,profit = switch.get(version,"Invalid input")
+	buy_price, sell_price, signal,trade,trade_r,profit = switch.get(version,"Invalid input")
 
 	f = plt.figure()
 	f.set_figwidth(15)
@@ -139,16 +147,22 @@ def currency(version,name):
 	plt.plot(sma_10, alpha = 0.6, label = 'SMA 10')
 	plt.plot(sma_20, alpha = 0.6, label = 'SMA 20')
 	plt.plot(sma_50, alpha = 0.6, label = 'SMA 50')
-	plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'B')
-	plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'S')
+
 	plt.legend(loc = 'upper left')
-
+	print("here")
+	title = 'nada niet'
 	if(len(trade)!=0):
-		title = 'avg profit : '+str(sum(trade)/len(trade))
-
-	plt.title('SMA 10-20 cross \n currency : ' + name + ' budget (usd) : ' + str(budget_l) + "\n profit (usd) : " + str(profit))
+		plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'B')
+		plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'S')
+		title = 'trade : ' + str(profit/(sum(trade)/len(trade))) + ' avg profit : '+str(sum(trade)/len(trade))
+	print("here")
 	buf = BytesIO()
+	print("here")
 	plt.savefig(buf, format="png")
-
+	print("here")
 	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
-	return f"<p>{title}</p><p>{trade}</p><img src='data:image/png;base64,{dat}'/>"
+	print("here")
+	return render_template("base.html",title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,coins=get_coin_list())
+
+if __name__ == '__main__':
+   app.run(debug = True)
