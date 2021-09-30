@@ -19,10 +19,12 @@ days = "1"
 money = "cardano"
 budget_l = 1000
 
+#get money info from coingecko
 def req(money,days):
 	data = cg.get_coin_ohlc_by_id(id=money, vs_currency='usd',days=days)
 	return data
 
+#format & save data as tst.csv
 def save(data):
 	line_list=[]
 	with open('tst.csv', 'w') as this_csv_file:
@@ -35,11 +37,12 @@ def save(data):
 			this_csv_file.write(line)
 			this_csv_file.write('\n')
 
-
+#get simple moving average 10,20,and 30-50 day
 def sma(data, n):
 	sma = data.rolling(window=n).mean()
 	return pd.DataFrame(sma)
-
+	
+#strategy
 def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):	
 	sma0 = joker
 	sma1 = short_window
