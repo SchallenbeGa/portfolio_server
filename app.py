@@ -41,7 +41,7 @@ def save(data):
 def sma(data, n):
 	sma = data.rolling(window=n).mean()
 	return pd.DataFrame(sma)
-	
+
 #strategy
 def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):	
 	sma0 = joker
@@ -139,15 +139,14 @@ def currency(version,name):
 	plt.plot(sma_10, alpha = 0.6, label = 'SMA 10')
 	plt.plot(sma_20, alpha = 0.6, label = 'SMA 20')
 	plt.plot(sma_50, alpha = 0.6, label = 'SMA 50')
-	plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'BUY SIGNAL')
-	plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'SELL SIGNAL')
+	plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'B')
+	plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'S')
 	plt.legend(loc = 'upper left')
 
 	if(len(trade)!=0):
-		title = 'profit :'+str(profit)+'\n avg profit : '+str(sum(trade)/len(trade))
-	else: title = 'profit : niet nada'
+		title = 'avg profit : '+str(sum(trade)/len(trade))
 
-	plt.title('SMA 10-20 reverse cross \n currency : '+name+' budget : '+str(budget_l))
+	plt.title('SMA 10-20 cross \n currency : ' + name + ' budget (usd) : ' + str(budget_l) + "\n profit (usd) : " + str(profit))
 	buf = BytesIO()
 	plt.savefig(buf, format="png")
 
