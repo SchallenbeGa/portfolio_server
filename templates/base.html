@@ -46,17 +46,17 @@
 			<ul class="nav flex-column mb-2" id="coins">
 				{% for x in range(0,15) %}
 					<li class="nav-item">
-						<a class="nav-link" href="/1/{{coins[x]["id"]}}">
+						<a class="nav-link" href="/1/{{coins.at[x,"id"]}}">
 						<span data-feather="file-text"></span>
-						{{coins[x]["id"]}}
+							{{coins.at[x,"id"]}}
 						</a>
 					</li>	
 				{% endfor %}
-				{% for x in coins %}
+				{% for x in range(coins_len) %}
 					<li class="nav-item" style="display:none">
-						<a class="nav-link" href="/1/{{x["id"]}}">
+						<a class="nav-link" href="/1/{{coins.at[x,"id"]}}">
 						<span data-feather="file-text"></span>
-						{{x["id"]}}
+						{{coins.at[x,"id"]}}
 						</a>
 					</li>	
 				{% endfor %}

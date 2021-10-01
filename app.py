@@ -24,11 +24,27 @@ def req(money,days):
 	data = cg.get_coin_ohlc_by_id(id=money, vs_currency='usd',days=days)
 	return data
 
-def get_coin_list():
-	data = cg.get_coins_list()
-	#print(data)
-	return data
+# def r_get_coin_list():
+# 	data = cg.get_coins_list()
+# 	#print(data)
+# 	save_coins(data)
+# 	data = get_coin_list()
+# 	return data
 
+# def save_coins(data):
+# 	line_list=[]
+# 	with open('coins.csv', 'w',encoding="utf-8") as this_csv_file:
+# 		line_list.append('id,symbol,name,n,y,z')
+# 		for y in data:
+# 			line=f'{y["id"]},{y["symbol"]},{y["name"]}'
+# 			line_list.append(line)
+# 		for line in line_list:
+# 			print(line)
+# 			this_csv_file.write(line)
+# 			this_csv_file.write('\n')
+
+def get_coin_list():
+	return pd.read_csv('coins.csv')
 #format & save data as tst.csv
 def save(data):
 	line_list=[]
@@ -116,6 +132,10 @@ def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):
 	
 	return buy_price, sell_price, sma_signal,trade,trade_r,(profit-budget_l)
 
+@app.route('/')
+def home():
+    return render_template('base.html')
+
 @app.route("/<version>/<name>")
 def currency(version,name):
 
@@ -155,14 +175,11 @@ def currency(version,name):
 		plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'B')
 		plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'S')
 		title = 'trade : ' + str(profit/(sum(trade)/len(trade))) + ' avg profit : '+str(sum(trade)/len(trade))
-	print("here")
 	buf = BytesIO()
-	print("here")
 	plt.savefig(buf, format="png")
-	print("here")
 	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
-	print("here")
-	return render_template("base.html",title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,coins=get_coin_list())
+	coins = get_coin_list()
+	return render_template("base.html",title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,coins=coins,coins_len=len(coins))
 
 if __name__ == '__main__':
    app.run(debug = True)
