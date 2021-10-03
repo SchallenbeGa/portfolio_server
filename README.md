@@ -1,4 +1,6 @@
-# 02
+
+
+# SMA Python strategy
 based on https://medium.com/codex/algorithmic-trading-with-sma-in-python-7d66008d37b1
 ## requirements :
 * Flask==2.0.1
