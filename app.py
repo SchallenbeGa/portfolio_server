@@ -7,7 +7,7 @@ import base64
 from io import BytesIO
 import datetime
 from pycoingecko import CoinGeckoAPI
-from flask import Flask,render_template
+from flask import Flask,render_template,redirect
 from matplotlib.figure import Figure
 
 app = Flask(__name__)
@@ -64,8 +64,8 @@ def sma(data, n):
 	return pd.DataFrame(sma)
 
 #strategy
-def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):	
-	sma0 = joker
+def s2(data, short_window, long_window,budget_l,nb_trade,ad):	
+
 	sma1 = short_window
 	sma2 = long_window
 
@@ -117,6 +117,7 @@ def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):
 					tr["quantity"] = slic/la
 					tr["sell_price"] = data[i]
 					tr["profit"] = ((slic/la)*data[i])-slic
+					tr["budget"] = profit
 					trade_r.append(tr)
 					if(ad==1):
 						slic=(slic/la)*data[i]
@@ -134,10 +135,10 @@ def s2(data, short_window, long_window,joker,budget_l,nb_trade,ad):
 
 @app.route('/')
 def home():
-    return render_template('base.html')
+	return redirect('/1/1/monero')
 
-@app.route("/<version>/<name>")
-def currency(version,name):
+@app.route("/<sr>/<version>/<name>/")
+def currency(version,name,sr):
 
 	save(req(name,30))
 	data = pd.read_csv('tst.csv').set_index('Date')
@@ -152,12 +153,15 @@ def currency(version,name):
 	sma_50 = data['sma_50']
 
 	switch={
-      "1":s2(data['Close'], sma_20, sma_10, sma_50,budget_l,1,0),
-      "2":s2(data['Close'], sma_20, sma_10, sma_50,budget_l,2,0),
-	  "3":s2(data['Close'], sma_20, sma_10, sma_50,budget_l,2,1)
-      }
-    
-	buy_price, sell_price, signal,trade,trade_r,profit = switch.get(version,"Invalid input")
+      "1":[1,0],
+      "2":[2,0],
+	  "3":[2,1]
+    }
+	version = switch.get(version,"Invalid input")
+	if(sr=="1"):
+		buy_price, sell_price, signal,trade,trade_r,profit = s2(data['Close'],sma_10, sma_20,budget_l,version[0],version[1])
+	else:
+		buy_price, sell_price, signal,trade,trade_r,profit = s2(data['Close'],sma_20, sma_10,budget_l,version[0],version[1])
 
 	f = plt.figure()
 	f.set_figwidth(15)
@@ -169,17 +173,19 @@ def currency(version,name):
 	plt.plot(sma_50, alpha = 0.6, label = 'SMA 50')
 
 	plt.legend(loc = 'upper left')
-	print("here")
+
 	title = 'nada niet'
+
 	if(len(trade)!=0):
 		plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'B')
 		plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'S')
 		title = 'trade : ' + str(profit/(sum(trade)/len(trade))) + ' avg profit : '+str(sum(trade)/len(trade))
+
 	buf = BytesIO()
 	plt.savefig(buf, format="png")
 	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
 	coins = get_coin_list()
-	return render_template("base.html",title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,coins=coins,coins_len=len(coins))
+	return render_template("base.html",profit=profit,title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,coins=coins,coins_len=len(coins),sr=sr)
 
 if __name__ == '__main__':
    app.run(debug = True)
