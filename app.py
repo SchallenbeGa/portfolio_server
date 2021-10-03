@@ -204,12 +204,12 @@ def brutus(data, short_window, long_window,budget_l,nb_trade,ad):
 
 @app.route('/')
 def home():
-	return redirect('/1/1/monero')
+	return redirect('/1/1/monero/30')
 
-@app.route("/<sr>/<version>/<name>/")
-def currency(version,name,sr):
+@app.route("/<sr>/<version>/<name>/<days>")
+def currency(sr,version,name,days):
 
-	save(req(name,30))
+	save(req(name,days))
 	data = pd.read_csv('tst.csv').set_index('Date')
 	data.index = pd.to_datetime(data.index)
 

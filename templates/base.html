@@ -46,7 +46,7 @@
 			<ul class="nav flex-column mb-2" id="coins">
 				{% for x in range(0,15) %}
 					<li class="nav-item">
-						<a class="nav-link" href="/{{sr}}/1/{{coins.at[x,"id"]}}">
+						<a class="nav-link" href="/{{sr}}/1/{{coins.at[x,"id"]}}/{{request.path.split('/')[4]}}">
 						<span data-feather="file-text"></span>
 							{{coins.at[x,"id"]}}
 						</a>
@@ -54,7 +54,7 @@
 				{% endfor %}
 				{% for x in range(coins_len) %}
 					<li class="nav-item" style="display:none">
-						<a class="nav-link" href="/{{sr}}/1/{{coins.at[x,"id"]}}">
+						<a class="nav-link" href="/{{sr}}/1/{{coins.at[x,"id"]}}/{{request.path.split('/')[4]}}">
 						<span data-feather="file-text"></span>
 						{{coins.at[x,"id"]}}
 						</a>
@@ -72,16 +72,25 @@
 		</div>
 
 		<div class="btn-group" role="group">
-			<a type="button" href="/{{sr}}/1/{{currency}}" class="btn btn-secondary {% if request.path.split('/')[2] == "1" %} active {%endif%}">v1</a>
-			<a type="button" href="/{{sr}}/2/{{currency}}" class="btn btn-secondary {% if request.path.split('/')[2] == "2" %} active {%endif%}">v2</a>
-			<a type="button" href="/{{sr}}/3/{{currency}}" class="btn btn-secondary {% if request.path.split('/')[2] == "3" %} active {%endif%}">v3</a>
+			<a type="button" href="/{{sr}}/1/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "1" %} active {%endif%}">v1</a>
+			<a type="button" href="/{{sr}}/2/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "2" %} active {%endif%}">v2</a>
+			<a type="button" href="/{{sr}}/3/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "3" %} active {%endif%}">v3</a>
 		</div>
 
 		<div class="btn-group" role="group">
-			<a type="button" href="/1/{{request.path.split('/')[2]}}/{{currency}}" class="btn btn-secondary {% if sr == "1" %} active {%endif%}">reverse 10-20</a>
-			<a type="button" href="/2/{{ request.path.split('/')[2] }}/{{currency}}" class="btn btn-secondary {% if sr == "2" %} active {%endif%}">simple 10-20</a>
-			<a type="button" href="/3/{{ request.path.split('/')[2] }}/{{currency}}" class="btn btn-secondary {% if sr == "3" %} active {%endif%}">brutus reverse</a>
-			<a type="button" href="/4/{{ request.path.split('/')[2] }}/{{currency}}" class="btn btn-secondary {% if sr == "4" %} active {%endif%}">brutus simple</a>
+			<a type="button" href="/1/{{request.path.split('/')[2]}}/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if sr == "1" %} active {%endif%}">reverse 10-20</a>
+			<a type="button" href="/2/{{ request.path.split('/')[2] }}/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if sr == "2" %} active {%endif%}">simple 10-20</a>
+			<a type="button" href="/3/{{ request.path.split('/')[2] }}/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if sr == "3" %} active {%endif%}">brutus reverse</a>
+			<a type="button" href="/4/{{ request.path.split('/')[2] }}/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if sr == "4" %} active {%endif%}">brutus simple</a>
+		</div>
+
+		<div class="btn-group" role="group">
+			<a type="button" href="/{{sr}}/{{request.path.split('/')[2]}}/{{currency}}/7" class="btn btn-secondary {% if request.path.split('/')[4] == "7" %} active {%endif%}">7</a>
+			<a type="button" href="/{{sr}}/{{request.path.split('/')[2]}}/{{currency}}/14" class="btn btn-secondary {% if request.path.split('/')[4] == "14" %} active {%endif%}">14</a>
+			<a type="button" href="/{{sr}}/{{request.path.split('/')[2]}}/{{currency}}/30" class="btn btn-secondary {% if request.path.split('/')[4] == "30" %} active {%endif%}">30</a>
+			<a type="button" href="/{{sr}}/{{request.path.split('/')[2]}}/{{currency}}/90" class="btn btn-secondary {% if request.path.split('/')[4] == "90" %} active {%endif%}">90</a>
+			<a type="button" href="/{{sr}}/{{request.path.split('/')[2]}}/{{currency}}/180" class="btn btn-secondary {% if request.path.split('/')[4] == "180" %} active {%endif%}">180</a>
+			<a type="button" href="/{{sr}}/{{request.path.split('/')[2]}}/{{currency}}/365" class="btn btn-secondary {% if request.path.split('/')[4] == "365" %} active {%endif%}">365</a>
 		</div>
 
 		<img class="my-2 w-100" id="myChart" width="900" height="550" src="data:image/png;base64,{{dat}}"/>
