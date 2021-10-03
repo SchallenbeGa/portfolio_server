@@ -235,7 +235,7 @@ def currency(version,name,sr):
 		buy_price, sell_price, signal,trade,trade_r,profit = brutus(data['Close'],sma_20, sma_10,budget_l,version[0],version[1])
 	elif sr == "4":
 		buy_price, sell_price, signal,trade,trade_r,profit = brutus(data['Close'],sma_10, sma_20,budget_l,version[0],version[1])
-
+	plt.close()
 	f = plt.figure()
 	f.set_figwidth(15)
 	f.set_figheight(7)
