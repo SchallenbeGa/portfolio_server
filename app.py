@@ -133,6 +133,75 @@ def s2(data, short_window, long_window,budget_l,nb_trade,ad):
 	
 	return buy_price, sell_price, sma_signal,trade,trade_r,(profit-budget_l)
 
+
+def brutus(data, short_window, long_window,budget_l,nb_trade,ad):	
+
+	sma1 = short_window
+	sma2 = long_window
+
+	buy_price = []
+	sell_price = []
+	sma_signal = []
+
+	last_buy = []
+	last_sell = []
+
+	last_signal = 0
+	signal = nb_trade
+	slic=budget_l/nb_trade
+	profit = budget_l
+	trade = []
+	trade_r = []
+	dispo = 0
+
+	for i in range(len(data)):
+
+		if (signal < nb_trade) & (dispo>0):
+			if(max(last_buy)<data[i]):
+				sell_price.append(data[i])
+				buy_price.append(np.nan)
+				tr = {"buy_price":min(last_buy)}
+				profit += (slic/min(last_buy))*data[i] - slic
+				last_sell.append(data[i])
+				signal+=1
+				dispo -= slic/min(last_buy)
+				sma_signal.append(-1)
+				la = last_buy.pop(-1)
+				trade.append(((slic/la)*data[i])-slic)
+				tr["quantity"] = slic/la
+				tr["sell_price"] = data[i]
+				tr["profit"] = ((slic/la)*data[i])-slic
+				tr["budget"] = profit
+				trade_r.append(tr)
+				if(ad==1):
+					slic=(slic/la)*data[i]
+			else:
+				buy_price.append(np.nan)
+				sell_price.append(np.nan)
+				sma_signal.append(0)
+
+		elif sma1[i] < sma2[i]:
+			if signal>0:
+				("buy at : ",data[i])
+				buy_price.append(data[i])
+				last_buy.append(data[i])
+				last_signal = data[i]
+				sell_price.append(np.nan)
+				dispo += slic/data[i]
+				signal-=1
+				sma_signal.append(signal)
+			else:
+				buy_price.append(np.nan)
+				sell_price.append(np.nan)
+				sma_signal.append(0)
+		else:
+			buy_price.append(np.nan)
+			sell_price.append(np.nan)
+			sma_signal.append(0)
+
+	return buy_price, sell_price, sma_signal,trade,trade_r,(profit-budget_l)
+
+
 @app.route('/')
 def home():
 	return redirect('/1/1/monero')
@@ -159,9 +228,13 @@ def currency(version,name,sr):
     }
 	version = switch.get(version,"Invalid input")
 	if(sr=="1"):
-		buy_price, sell_price, signal,trade,trade_r,profit = s2(data['Close'],sma_10, sma_20,budget_l,version[0],version[1])
-	else:
 		buy_price, sell_price, signal,trade,trade_r,profit = s2(data['Close'],sma_20, sma_10,budget_l,version[0],version[1])
+	elif sr == "2":
+		buy_price, sell_price, signal,trade,trade_r,profit = s2(data['Close'],sma_10, sma_20,budget_l,version[0],version[1])
+	elif sr == "3":
+		buy_price, sell_price, signal,trade,trade_r,profit = brutus(data['Close'],sma_20, sma_10,budget_l,version[0],version[1])
+	elif sr == "4":
+		buy_price, sell_price, signal,trade,trade_r,profit = brutus(data['Close'],sma_10, sma_20,budget_l,version[0],version[1])
 
 	f = plt.figure()
 	f.set_figwidth(15)
