@@ -70,13 +70,13 @@
 			<p>Budget : 1000</p>
 			{% if trade_l != 0 %}<p style="color:green">Profit :  {{profit}}</p>{%endif%}
 		</div>
-
-		<div class="btn-group" role="group">
-			<a type="button" href="/{{sr}}/1/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "1" %} active {%endif%}">v1</a>
-			<a type="button" href="/{{sr}}/2/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "2" %} active {%endif%}">v2</a>
-			<a type="button" href="/{{sr}}/3/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "3" %} active {%endif%}">v3</a>
-		</div>
-
+		{% if sr != "3" and sr != "4"%}
+			<div class="btn-group" role="group">
+				<a type="button" href="/{{sr}}/1/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "1" %} active {%endif%}">v1</a>
+				<a type="button" href="/{{sr}}/2/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "2" %} active {%endif%}">v2</a>
+				<a type="button" href="/{{sr}}/3/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if request.path.split('/')[2] == "3" %} active {%endif%}">v3</a>
+			</div>
+		{%endif%}
 		<div class="btn-group" role="group">
 			<a type="button" href="/1/{{request.path.split('/')[2]}}/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if sr == "1" %} active {%endif%}">reverse 10-20</a>
 			<a type="button" href="/2/{{ request.path.split('/')[2] }}/{{currency}}/{{request.path.split('/')[4]}}" class="btn btn-secondary {% if sr == "2" %} active {%endif%}">simple 10-20</a>
