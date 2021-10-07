@@ -1,17 +1,21 @@
 import matplotlib
 matplotlib.use('Agg')
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+
+import datetime
 import base64
 from io import BytesIO
-import datetime
-from pycoingecko import CoinGeckoAPI
-from flask import Flask,render_template,redirect
+
+import pandas as pd
+import numpy as np
+
+import mplfinance as mpf
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
+from pycoingecko import CoinGeckoAPI
+from flask import Flask
+from flask import render_template,redirect
 app = Flask(__name__)
-
 
 cg = CoinGeckoAPI()
 
@@ -19,55 +23,25 @@ days = "1"
 money = "cardano"
 budget_l = 1000
 
-#get money info from coingecko
 def req(money,days):
+
 	data = cg.get_coin_ohlc_by_id(id=money, vs_currency='usd',days=days)
-	return data
+	d1 = {'Date':[],'Open':[],'High':[],'Low':[],'Close':[]}
 
-# def r_get_coin_list():
-# 	data = cg.get_coins_list()
-# 	#print(data)
-# 	save_coins(data)
-# 	data = get_coin_list()
-# 	return data
+	for y in data:
+		d1['Date'].append(datetime.datetime.fromtimestamp(y[0] / 1e3))
+		d1['Open'].append(y[1])
+		d1['High'].append(y[2])
+		d1['Low'].append(y[3])
+		d1['Close'].append(y[4])
 
-# def save_coins(data):
-# 	line_list=[]
-# 	with open('coins.csv', 'w',encoding="utf-8") as this_csv_file:
-# 		line_list.append('id,symbol,name,n,y,z')
-# 		for y in data:
-# 			line=f'{y["id"]},{y["symbol"]},{y["name"]}'
-# 			line_list.append(line)
-# 		for line in line_list:
-# 			print(line)
-# 			this_csv_file.write(line)
-# 			this_csv_file.write('\n')
+	return pd.DataFrame(d1).set_index('Date')
 
-def get_coin_list():
-	return pd.read_csv('coins.csv')
-#format & save data as tst.csv
-def save(data):
-	line_list=[]
-	with open('tst.csv', 'w') as this_csv_file:
-		line_list.append('Date,Open,High,Low,Close,Volume')
-		for y in data:
-			datet = datetime.datetime.fromtimestamp(y[0] / 1e3)
-			line=f'{datet},{y[1]},{y[2]},{y[3]},{y[4]}'
-			line_list.append(line)
-		for line in line_list:
-			this_csv_file.write(line)
-			this_csv_file.write('\n')
-
-#get simple moving average 10,20,and 30-50 day
 def sma(data, n):
 	sma = data.rolling(window=n).mean()
 	return pd.DataFrame(sma)
 
-#strategy
-def s2(data, short_window, long_window,budget_l,nb_trade,ad):	
-
-	sma1 = short_window
-	sma2 = long_window
+def s1(data, short_window, long_window,budget_l):
 
 	buy_price = []
 	sell_price = []
@@ -76,13 +50,17 @@ def s2(data, short_window, long_window,budget_l,nb_trade,ad):
 	last_buy = []
 	last_sell = []
 
-	last_signal = 0
-	signal = nb_trade
-	slic=budget_l/nb_trade
-	profit = budget_l
 	trade = []
 	trade_r = []
+
+	sma1 = short_window
+	sma2 = long_window
+
 	dispo = 0
+	last_signal = 0
+	signal = 1
+	slic=budget_l/1
+	profit = budget_l
 
 	for i in range(len(data)):
 		if sma1[i] > sma2[i]:
@@ -90,19 +68,19 @@ def s2(data, short_window, long_window,budget_l,nb_trade,ad):
 				buy_price.append(data[i])
 				last_buy.append(data[i])
 				last_signal = data[i]
-				sell_price.append(np.nan)
+				sell_price.append(float('nan'))
 				dispo += slic/data[i]
 				signal-=1
 				sma_signal.append(signal)
 			else:
-				buy_price.append(np.nan)
-				sell_price.append(np.nan)
+				buy_price.append(float('nan'))
+				sell_price.append(float('nan'))
 				sma_signal.append(0)
 		elif sma2[i] > sma1[i]:
-			if signal < nb_trade:
-				buy_price.append(np.nan)
+			if signal < 1:
+				buy_price.append(float('nan'))
 				if(max(last_buy)>data[i]):
-					sell_price.append(np.nan)
+					sell_price.append(float('nan'))
 					sma_signal.append(0)
 				else:
 					sell_price.append(data[i])
@@ -119,99 +97,34 @@ def s2(data, short_window, long_window,budget_l,nb_trade,ad):
 					tr["profit"] = ((slic/la)*data[i])-slic
 					tr["budget"] = profit
 					trade_r.append(tr)
-					if(ad==1):
-						slic=(slic/la)*data[i]
 					
 			else:
-				buy_price.append(np.nan)
-				sell_price.append(np.nan)
+				buy_price.append(float('nan'))
+				sell_price.append(float('nan'))
 				sma_signal.append(0)
 		else:
-			buy_price.append(np.nan)
-			sell_price.append(np.nan)
+			buy_price.append(float('nan'))
+			sell_price.append(float('nan'))
 			sma_signal.append(0)
 	
 	return buy_price, sell_price, sma_signal,trade,trade_r,(profit-budget_l)
 
-
-def brutus(data, short_window, long_window,budget_l,nb_trade,ad):	
-
-	sma1 = short_window
-	sma2 = long_window
-
-	buy_price = []
-	sell_price = []
-	sma_signal = []
-
-	last_buy = []
-	last_sell = []
-
-	last_signal = 0
-	signal = nb_trade
-	slic=budget_l/nb_trade
-	profit = budget_l
-	trade = []
-	trade_r = []
-	dispo = 0
-
-	for i in range(len(data)):
-
-		if (signal < nb_trade) & (dispo>0):
-			if(max(last_buy)<data[i]):
-				sell_price.append(data[i])
-				buy_price.append(np.nan)
-				tr = {"buy_price":min(last_buy)}
-				profit += (slic/min(last_buy))*data[i] - slic
-				last_sell.append(data[i])
-				signal+=1
-				dispo -= slic/min(last_buy)
-				sma_signal.append(-1)
-				la = last_buy.pop(-1)
-				trade.append(((slic/la)*data[i])-slic)
-				tr["quantity"] = slic/la
-				tr["sell_price"] = data[i]
-				tr["profit"] = ((slic/la)*data[i])-slic
-				tr["budget"] = profit
-				trade_r.append(tr)
-				if(ad==1):
-					slic=(slic/la)*data[i]
-			else:
-				buy_price.append(np.nan)
-				sell_price.append(np.nan)
-				sma_signal.append(0)
-
-		elif sma1[i] < sma2[i]:
-			if signal>0:
-				("buy at : ",data[i])
-				buy_price.append(data[i])
-				last_buy.append(data[i])
-				last_signal = data[i]
-				sell_price.append(np.nan)
-				dispo += slic/data[i]
-				signal-=1
-				sma_signal.append(signal)
-			else:
-				buy_price.append(np.nan)
-				sell_price.append(np.nan)
-				sma_signal.append(0)
-		else:
-			buy_price.append(np.nan)
-			sell_price.append(np.nan)
-			sma_signal.append(0)
-
-	return buy_price, sell_price, sma_signal,trade,trade_r,(profit-budget_l)
-
-
 @app.route('/')
 def home():
-	return redirect('/1/1/monero/30')
+	return redirect('/')
 
-@app.route("/<sr>/<version>/<name>/<days>")
-def currency(sr,version,name,days):
+@app.route("/<name>/<days>/<budget_l>")
+def currency(name,days,budget_l):
 
-	save(req(name,days))
-	data = pd.read_csv('tst.csv').set_index('Date')
+	data = req(name,days)
 	data.index = pd.to_datetime(data.index)
+
+	#print(data.value_counts())
+	
+	# df1 = pd.DataFrame(data=data['Open'].value_counts(), columns=[['Open','Count']])
+	# df1['Count']=df1['Open'].index
+	
+	# print(list(df1[df1['Open']==df1.Number.max()]['Count']))
 
 	n = [10,20,50]
 	for i in n:
@@ -221,20 +134,21 @@ def currency(sr,version,name,days):
 	sma_20 = data['sma_20']
 	sma_50 = data['sma_50']
 
-	switch={
-      "1":[1,0],
-      "2":[2,0],
-	  "3":[2,1]
-    }
-	version = switch.get(version,"Invalid input")
-	if(sr=="1"):
-		buy_price, sell_price, signal,trade,trade_r,profit = s2(data['Close'],sma_20, sma_10,budget_l,version[0],version[1])
-	elif sr == "2":
-		buy_price, sell_price, signal,trade,trade_r,profit = s2(data['Close'],sma_10, sma_20,budget_l,version[0],version[1])
-	elif sr == "3":
-		buy_price, sell_price, signal,trade,trade_r,profit = brutus(data['Close'],sma_20, sma_10,budget_l,version[0],version[1])
-	elif sr == "4":
-		buy_price, sell_price, signal,trade,trade_r,profit = brutus(data['Close'],sma_10, sma_20,budget_l,version[0],version[1])
+	buy_price, sell_price, signal,trade,trade_r,profit = s1(data['Close'],sma_20, sma_10,int(budget_l))
+
+	buf = BytesIO()
+	mpf.plot(data,
+			type='candle',
+			figscale=2.2,
+			fill_between=dict(y1=data['Low'].mean(),y2=data['High'].mean()),
+			datetime_format=' %A, %d-%m-%Y',
+			xrotation=45,
+			style='charles',
+            ylabel='Price ($)',
+            ylabel_lower='Shares \nTraded', 
+            mav=(3,6,9),
+			savefig=buf)
+
 	plt.close()
 	f = plt.figure()
 	f.set_figwidth(15)
@@ -253,12 +167,8 @@ def currency(sr,version,name,days):
 		plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'B')
 		plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'S')
 		title = 'trade : ' + str(profit/(sum(trade)/len(trade))) + ' avg profit : '+str(sum(trade)/len(trade))
-
-	buf = BytesIO()
-	plt.savefig(buf, format="png")
 	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
-	coins = get_coin_list()
-	return render_template("base.html",profit=profit,title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,coins=coins,coins_len=len(coins),sr=sr)
+	return render_template("base.html",profit=profit,title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,budget=budget_l)
 
 if __name__ == '__main__':
    app.run(debug = True)
