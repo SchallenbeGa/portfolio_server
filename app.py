@@ -97,7 +97,7 @@ def s1(data, short_window, long_window,budget_l):
 					tr["profit"] = ((slic/la)*data[i])-slic
 					tr["budget"] = profit
 					trade_r.append(tr)
-					
+					slic=(slic/la)*data[i]		
 			else:
 				buy_price.append(float('nan'))
 				sell_price.append(float('nan'))
@@ -111,7 +111,7 @@ def s1(data, short_window, long_window,budget_l):
 
 @app.route('/')
 def home():
-	return redirect('/')
+	return redirect('/monero/30/8000')
 
 @app.route("/<name>/<days>/<budget_l>")
 def currency(name,days,budget_l):
