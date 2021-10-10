@@ -1,174 +1,100 @@
-import matplotlib
-matplotlib.use('Agg')
-
+import math
 import datetime
-import base64
-from io import BytesIO
+import time
+import os
+import json
 
 import pandas as pd
-import numpy as np
-
-import mplfinance as mpf
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-
-from pycoingecko import CoinGeckoAPI
 from flask import Flask
 from flask import render_template,redirect
+
+from pycoingecko import CoinGeckoAPI
+
 app = Flask(__name__)
 
 cg = CoinGeckoAPI()
 
-days = "1"
-money = "cardano"
-budget_l = 1000
+currencies = pd.read_csv('budget-example.csv')
 
-def req(money,days):
+def save(name,days,pat):
+	data = cg.get_coin_ohlc_by_id(id=name, vs_currency='usd',days=days)
+	line_list=[]
+	with open(pat, 'w') as this_csv_file:
+		line_list.append('Date,Open,High,Low,Close,Volume')
+		for y in data:
+			datet = datetime.datetime.fromtimestamp(y[0] / 1e3)
+			line=f'{datet},{y[1]},{y[2]},{y[3]},{y[4]}'
+			line_list.append(line)
+		for line in line_list:
+			this_csv_file.write(line)
+			this_csv_file.write('\n')
 
-	data = cg.get_coin_ohlc_by_id(id=money, vs_currency='usd',days=days)
-	d1 = {'Date':[],'Open':[],'High':[],'Low':[],'Close':[]}
+@app.route("/refresh")
+def refresh():
+	for n in 1,30:
+		for i,z,buy in currencies.values:
+			pat = 'data/'+i+'_'+str(n)+'.csv'
+			if(os.path.exists(pat)):
+				if (int(time.time()) - 60 * 5) > int((os.path.getmtime(pat))):
+					print("download ",n,": ",i)
+					save(i,n,pat)
+			else:
+				print("download ",n,": ",i)
+				save(i,n,pat)
+	return redirect('/')
 
-	for y in data:
-		d1['Date'].append(datetime.datetime.fromtimestamp(y[0] / 1e3))
-		d1['Open'].append(y[1])
-		d1['High'].append(y[2])
-		d1['Low'].append(y[3])
-		d1['Close'].append(y[4])
+@app.route("/edit")
+def edit():
+	trade = []
 
-	return pd.DataFrame(d1).set_index('Date')
+	for i,z,buy in currencies.values:
+		tr = {"money":i,"quantity":z,"buy_price":buy}
+		trade.append(tr)
 
-def sma(data, n):
-	sma = data.rolling(window=n).mean()
-	return pd.DataFrame(sma)
+	return render_template("edit.html",trade=trade)
 
-def s1(data, short_window, long_window,budget_l):
-
-	buy_price = []
-	sell_price = []
-	sma_signal = []
-
-	last_buy = []
-	last_sell = []
+@app.route("/")
+def home():
 
 	trade = []
-	trade_r = []
 
-	sma1 = short_window
-	sma2 = long_window
+	for i,z,buy in currencies.values:
+		data = pd.read_csv('data/'+i+'_30.csv')
+		data.index = pd.to_datetime(data.index)	
 
-	dispo = 0
-	last_signal = 0
-	signal = 1
-	slic=budget_l/1
-	profit = budget_l
-
-	for i in range(len(data)):
-		if sma1[i] > sma2[i]:
-			if signal>0:
-				buy_price.append(data[i])
-				last_buy.append(data[i])
-				last_signal = data[i]
-				sell_price.append(float('nan'))
-				dispo += slic/data[i]
-				signal-=1
-				sma_signal.append(signal)
-			else:
-				buy_price.append(float('nan'))
-				sell_price.append(float('nan'))
-				sma_signal.append(0)
-		elif sma2[i] > sma1[i]:
-			if signal < 1:
-				buy_price.append(float('nan'))
-				if(max(last_buy)>data[i]):
-					sell_price.append(float('nan'))
-					sma_signal.append(0)
-				else:
-					sell_price.append(data[i])
-					tr = {"buy_price":min(last_buy)}
-					profit += (slic/min(last_buy))*data[i] - slic
-					last_sell.append(data[i])
-					signal+=1
-					dispo -= slic/min(last_buy)
-					sma_signal.append(-1)
-					la = last_buy.pop(-1)
-					trade.append(((slic/la)*data[i])-slic)
-					tr["quantity"] = slic/la
-					tr["sell_price"] = data[i]
-					tr["profit"] = ((slic/la)*data[i])-slic
-					tr["budget"] = profit
-					trade_r.append(tr)
-					slic=(slic/la)*data[i]		
-			else:
-				buy_price.append(float('nan'))
-				sell_price.append(float('nan'))
-				sma_signal.append(0)
-		else:
-			buy_price.append(float('nan'))
-			sell_price.append(float('nan'))
-			sma_signal.append(0)
+		data_p = pd.read_csv('data/'+i+'_1.csv')
+		data_p.index = pd.to_datetime(data_p.index)	
+		
+		sma_10 = pd.DataFrame(data['Close'].rolling(window=10).mean()).max()['Close']
+		sma_20 = pd.DataFrame(data['Close'].rolling(window=20).mean()).max()['Close']
+		sma_30 = pd.DataFrame(data['Close'].rolling(window=30).mean()).max()['Close']
+		comment = "nada"
 	
-	return buy_price, sell_price, sma_signal,trade,trade_r,(profit-budget_l)
+		if (data_p['Close'].iloc[-1]>sma_10) :
+			comment = "hold"
+			if (data_p['Close'].iloc[-1]>sma_10) & (data_p['Close'].iloc[-1]>sma_20)  :
+				comment = "may sell"
+				if (data_p['Close'].iloc[-1]>sma_10) & (data_p['Close'].iloc[-1]>sma_20) & (data_p['Close'].iloc[-1]>sma_30)  :
+					comment = "SELL !!!"
 
-@app.route('/')
-def home():
-	return redirect('/monero/30/8000')
-
-@app.route("/<name>/<days>/<budget_l>")
-def currency(name,days,budget_l):
-
-	data = req(name,days)
-	data.index = pd.to_datetime(data.index)
-
-	#print(data.value_counts())
+		if (data_p['Close'].iloc[-1]<sma_10)  :
+			comment = "risky buy"
+			if (data_p['Close'].iloc[-1]<sma_10) & (data_p['Close'].iloc[-1]<sma_20)  :
+				comment = "may buy"
+				if (data_p['Close'].iloc[-1]<sma_10) & (data_p['Close'].iloc[-1]<sma_20) & (data_p['Close'].iloc[-1]<sma_30)  :
+					comment = "BUY !!!"
 	
-	# df1 = pd.DataFrame(data=data['Open'].value_counts(), columns=[['Open','Count']])
-	# df1['Count']=df1['Open'].index
-	
-	# print(list(df1[df1['Open']==df1.Number.max()]['Count']))
+		# print("money : ",i," price : ",data_p['Close'].iloc[-1],"sma 10 : ",sma_10,"sma 20 : ",sma_20,"sma 30 : ",sma_30," advice : ",comment)
+		tr = {"money":i,"quantity":z,"price":data_p['Close'].iloc[-1],"buy_price":buy,"sma_10":sma_10,"sma_20":sma_20,"sma_30":sma_30,"comment":comment}
+		trade.append(tr)
 
-	n = [10,20,50]
-	for i in n:
-		data[f'sma_{i}'] = sma(data['Close'], i)
+	return render_template("index.html",trade=trade)
 
-	sma_10 = data['sma_10']
-	sma_20 = data['sma_20']
-	sma_50 = data['sma_50']
+@app.route("/api")
+def api():
+	trade = []
+	for i,z,buy in currencies.values:
+		tr = {"money":i,"quantity":z,"buy_price":buy}
+		trade.append(tr)
 
-	buy_price, sell_price, signal,trade,trade_r,profit = s1(data['Close'],sma_20, sma_10,int(budget_l))
-
-	buf = BytesIO()
-	mpf.plot(data,
-			type='candle',
-			figscale=2.2,
-			fill_between=dict(y1=data['Low'].mean(),y2=data['High'].mean()),
-			datetime_format=' %A, %d-%m-%Y',
-			xrotation=45,
-			style='charles',
-            ylabel='Price ($)',
-            ylabel_lower='Shares \nTraded', 
-            mav=(3,6,9),
-			savefig=buf)
-
-	plt.close()
-	f = plt.figure()
-	f.set_figwidth(15)
-	f.set_figheight(7)
-
-	plt.plot(data['Close'], alpha = 0.3, label = 'data')
-	plt.plot(sma_10, alpha = 0.6, label = 'SMA 10')
-	plt.plot(sma_20, alpha = 0.6, label = 'SMA 20')
-	plt.plot(sma_50, alpha = 0.6, label = 'SMA 50')
-
-	plt.legend(loc = 'upper left')
-
-	title = 'nada niet'
-
-	if(len(trade)!=0):
-		plt.scatter(data.index, buy_price, marker = '^', s = 200, color = 'darkblue', label = 'B')
-		plt.scatter(data.index, sell_price, marker = 'v', s = 200, color = 'crimson', label = 'S')
-		title = 'trade : ' + str(profit/(sum(trade)/len(trade))) + ' avg profit : '+str(sum(trade)/len(trade))
-	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
-	return render_template("base.html",profit=profit,title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,budget=budget_l)
-
-if __name__ == '__main__':
-   app.run(debug = True)
+	return json.dumps(trade)
