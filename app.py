@@ -29,20 +29,6 @@ def save(name,days,pat):
 			this_csv_file.write(line)
 			this_csv_file.write('\n')
 
-@app.route("/refresh")
-def refresh():
-	for n in 1,30:
-		for i,z,buy in currencies.values:
-			pat = 'data/'+i+'_'+str(n)+'.csv'
-			if(os.path.exists(pat)):
-				if (int(time.time()) - 60 * 5) > int((os.path.getmtime(pat))):
-					print("download ",n,": ",i)
-					save(i,n,pat)
-			else:
-				print("download ",n,": ",i)
-				save(i,n,pat)
-	return redirect('/')
-
 @app.route("/edit")
 def edit():
 	trade = []
