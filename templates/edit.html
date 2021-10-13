@@ -52,14 +52,16 @@
 					<th scope="col">Name</th>
 					<th scope="col">Buy Price</th>
 					<th scope="col">Quantity</th>
+					<th scope="col">Action</th>
 				</tr>
 			</thead>
 			<tbody>
 				{%for x in trade%}
 					<tr>
-						<td>{{x['money']}}</td>
-						<td>{{x['buy_price']}}</td>
-						<td>{{x['quantity']}}</td>
+						<td><input class="form-control" value="{{x['money']}}"></td>
+						<td><input class="form-control" value="{{x['buy_price']}}"></td>
+						<td><input class="form-control" value="{{x['quantity']}}"></td>
+						<td><button type="submit" class="btn btn-primary" >Save</button></td>
 					</tr>
 				{%endfor%}
 			</tbody>
