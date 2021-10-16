@@ -21,15 +21,6 @@
 
 <main>
 
-  <section class="py-5 text-center container">
-    <div class="row py-lg-5">
-      <div class="col-lg-6 col-md-8 mx-auto">
-        <h1 class="fw-light">Buy or Sell</h1>
-		<p>Portfolio editor</p>
-      </div>
-    </div>
-  </section>
-
   <div class="py-5 bg-light">
     <div class="container">
 		<!-- <div class="row ">
@@ -53,17 +44,32 @@
 					<th scope="col">Buy Price</th>
 					<th scope="col">Quantity</th>
 					<th scope="col">Action</th>
+					<th scope="col"></th>
 				</tr>
 			</thead>
 			<tbody>
 				{%for x in trade%}
 					<tr>
-						<td><input class="form-control" value="{{x['money']}}"></td>
-						<td><input class="form-control" value="{{x['buy_price']}}"></td>
-						<td><input class="form-control" value="{{x['quantity']}}"></td>
-						<td><button type="submit" class="btn btn-primary" >Save</button></td>
+						<form action="edit" method="post">
+							<td><input class="form-control" name="money" value="{{x['money']}}"></td>
+							<td><input class="form-control" name="buy_price" value="{{x['buy_price']}}"></td>
+							<td><input class="form-control" name="quantity" value="{{x['quantity']}}"></td>
+							<td><button type="submit" class="btn btn-success">Save</button></td>
+						</form>
+						<form action="trash" method="post">
+							<input type="hidden" name="money" value="{{x['money']}}">
+							<td><button type="submit" class="btn btn-danger">Delete</button></td>
+						</form>
 					</tr>
 				{%endfor%}
+				<tr>
+					<form action="new" method="post">
+						<td><input class="form-control" name="money"></td>
+						<td><input class="form-control" name="buy_price"></td>
+						<td><input class="form-control" name="quantity"></td>
+						<td><button type="submit" class="btn btn-primary">Add</button></td>
+					</form>
+				</tr>
 			</tbody>
 		</table>
       </div>
