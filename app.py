@@ -7,10 +7,11 @@ import json
 import pandas as pd
 from flask import Flask
 from flask import render_template,redirect,request
-
+from flask_cors import CORS
 from pycoingecko import CoinGeckoAPI
 
 app = Flask(__name__)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 cg = CoinGeckoAPI()
 
@@ -148,9 +149,49 @@ def home():
 
 @app.route("/api")
 def api():
+	currencies = pd.read_csv('budget-example.csv')
+	for n in 1,30:
+		for i,z,buy in currencies.values:
+			pat = 'data/'+i+'_'+str(n)+'.csv'
+			if(os.path.exists(pat)):
+				if (int(time.time()) - 60 * 5) > int((os.path.getmtime(pat))):
+					print("download ",n,": ",i)
+					save(i,n,pat)
+			else:
+				print("download ",n,": ",i)
+				save(i,n,pat)
+
 	trade = []
+
 	for i,z,buy in currencies.values:
-		tr = {"money":i,"quantity":z,"buy_price":buy}
+		data = pd.read_csv('data/'+i+'_30.csv')
+		data.index = pd.to_datetime(data.index)	
+
+		data_p = pd.read_csv('data/'+i+'_1.csv')
+		data_p.index = pd.to_datetime(data_p.index)	
+		
+		sma_10 = pd.DataFrame(data['Close'].rolling(window=10).mean()).max()['Close']
+		sma_20 = pd.DataFrame(data['Close'].rolling(window=20).mean()).max()['Close']
+		sma_30 = pd.DataFrame(data['Close'].rolling(window=30).mean()).max()['Close']
+		comment = "nada"
+	
+		if (data_p['Close'].iloc[-1]>sma_10) :
+			comment = "hold"
+			if (data_p['Close'].iloc[-1]>sma_10) & (data_p['Close'].iloc[-1]>sma_20)  :
+				comment = "may sell"
+				if (data_p['Close'].iloc[-1]>sma_10) & (data_p['Close'].iloc[-1]>sma_20) & (data_p['Close'].iloc[-1]>sma_30)  :
+					comment = "SELL !!!"
+
+		if (data_p['Close'].iloc[-1]<sma_10)  :
+			comment = "risky buy"
+			if (data_p['Close'].iloc[-1]<sma_10) & (data_p['Close'].iloc[-1]<sma_20)  :
+				comment = "may buy"
+				if (data_p['Close'].iloc[-1]<sma_10) & (data_p['Close'].iloc[-1]<sma_20) & (data_p['Close'].iloc[-1]<sma_30)  :
+					comment = "BUY !!!"
+		
+		pnl = (z*data_p['Close'].iloc[-1])-(z*buy)
+		
+		tr = {"pnl":pnl,"money":i,"quantity":z,"price":data_p['Close'].iloc[-1],"buy_price":buy,"sma_10":sma_10,"sma_20":sma_20,"sma_30":sma_30,"comment":comment}
 		trade.append(tr)
 
 	return json.dumps(trade)
