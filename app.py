@@ -3,32 +3,22 @@ import datetime
 import time
 import os
 import json
-
-import pandas as pd
+import csv
 from flask import Flask
 from flask import render_template,redirect,request
 from flask_cors import CORS
-from pycoingecko import CoinGeckoAPI
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-cg = CoinGeckoAPI()
-
-currencies = pd.read_csv('budget-example.csv')
-
-def save(name,days,pat):
-	data = cg.get_coin_ohlc_by_id(id=name, vs_currency='usd',days=days)
-	line_list=[]
-	with open(pat, 'w') as this_csv_file:
-		line_list.append('Date,Open,High,Low,Close,Volume')
-		for y in data:
-			datet = datetime.datetime.fromtimestamp(y[0] / 1e3)
-			line=f'{datet},{y[1]},{y[2]},{y[3]},{y[4]}'
-			line_list.append(line)
-		for line in line_list:
-			this_csv_file.write(line)
-			this_csv_file.write('\n')
+def get_budget():
+	with open('budget-example.csv', 'r') as file:
+		budget = []
+		reader = csv.DictReader(file)
+		for row in reader:
+			budget.append(row)
+		print(budget)
+		return dict(budget)
 
 def save_budget(data):
 	line_list=[]
@@ -44,7 +34,7 @@ def save_budget(data):
 
 @app.route("/edit")
 def edit():
-	currencies = pd.read_csv('budget-example.csv')
+	currencies = get_budget()
 	trade = []
 	for i,z,buy in currencies.values:
 		tr = {"money":i,"quantity":z,"buy_price":buy}
@@ -100,98 +90,9 @@ def new():
 
 @app.route("/")
 def home():
-	currencies = pd.read_csv('budget-example.csv')
-	for n in 1,30:
-		for i,z,buy in currencies.values:
-			pat = 'data/'+i+'_'+str(n)+'.csv'
-			if(os.path.exists(pat)):
-				if (int(time.time()) - 60 * 5) > int((os.path.getmtime(pat))):
-					print("download ",n,": ",i)
-					save(i,n,pat)
-			else:
-				print("download ",n,": ",i)
-				save(i,n,pat)
-
-	trade = []
-
-	for i,z,buy in currencies.values:
-		data = pd.read_csv('data/'+i+'_30.csv')
-		data.index = pd.to_datetime(data.index)	
-
-		data_p = pd.read_csv('data/'+i+'_1.csv')
-		data_p.index = pd.to_datetime(data_p.index)	
-		
-		sma_10 = pd.DataFrame(data['Close'].rolling(window=10).mean()).max()['Close']
-		sma_20 = pd.DataFrame(data['Close'].rolling(window=20).mean()).max()['Close']
-		sma_30 = pd.DataFrame(data['Close'].rolling(window=30).mean()).max()['Close']
-		comment = "nada"
-	
-		if (data_p['Close'].iloc[-1]>sma_10) :
-			comment = "hold"
-			if (data_p['Close'].iloc[-1]>sma_10) & (data_p['Close'].iloc[-1]>sma_20)  :
-				comment = "may sell"
-				if (data_p['Close'].iloc[-1]>sma_10) & (data_p['Close'].iloc[-1]>sma_20) & (data_p['Close'].iloc[-1]>sma_30)  :
-					comment = "SELL !!!"
-
-		if (data_p['Close'].iloc[-1]<sma_10)  :
-			comment = "risky buy"
-			if (data_p['Close'].iloc[-1]<sma_10) & (data_p['Close'].iloc[-1]<sma_20)  :
-				comment = "may buy"
-				if (data_p['Close'].iloc[-1]<sma_10) & (data_p['Close'].iloc[-1]<sma_20) & (data_p['Close'].iloc[-1]<sma_30)  :
-					comment = "BUY !!!"
-		
-		pnl = (z*data_p['Close'].iloc[-1])-(z*buy)
-		
-		tr = {"pnl":pnl,"money":i,"quantity":z,"price":data_p['Close'].iloc[-1],"buy_price":buy,"sma_10":sma_10,"sma_20":sma_20,"sma_30":sma_30,"comment":comment}
-		trade.append(tr)
-
-	return render_template("index.html",trade=trade)
+	print(get_budget())
+	return render_template("index.html",trade=get_budget())
 
 @app.route("/api")
 def api():
-	currencies = pd.read_csv('budget-example.csv')
-	for n in 1,30:
-		for i,z,buy in currencies.values:
-			pat = 'data/'+i+'_'+str(n)+'.csv'
-			if(os.path.exists(pat)):
-				if (int(time.time()) - 60 * 60) > int((os.path.getmtime(pat))):
-					print("download ",n,": ",i)
-					save(i,n,pat)
-			else:
-				print("download ",n,": ",i)
-				save(i,n,pat)
-
-	trade = []
-
-	for i,z,buy in currencies.values:
-		data = pd.read_csv('data/'+i+'_30.csv')
-		data.index = pd.to_datetime(data.index)	
-
-		data_p = pd.read_csv('data/'+i+'_1.csv')
-		data_p.index = pd.to_datetime(data_p.index)	
-		
-		sma_10 = pd.DataFrame(data['Close'].rolling(window=10).mean()).max()['Close']
-		sma_20 = pd.DataFrame(data['Close'].rolling(window=20).mean()).max()['Close']
-		sma_30 = pd.DataFrame(data['Close'].rolling(window=30).mean()).max()['Close']
-		comment = "nada"
-	
-		if (data_p['Close'].iloc[-1]>sma_10) :
-			comment = "hold"
-			if (data_p['Close'].iloc[-1]>sma_10) & (data_p['Close'].iloc[-1]>sma_20)  :
-				comment = "may sell"
-				if (data_p['Close'].iloc[-1]>sma_10) & (data_p['Close'].iloc[-1]>sma_20) & (data_p['Close'].iloc[-1]>sma_30)  :
-					comment = "SELL !!!"
-
-		if (data_p['Close'].iloc[-1]<sma_10)  :
-			comment = "risky buy"
-			if (data_p['Close'].iloc[-1]<sma_10) & (data_p['Close'].iloc[-1]<sma_20)  :
-				comment = "may buy"
-				if (data_p['Close'].iloc[-1]<sma_10) & (data_p['Close'].iloc[-1]<sma_20) & (data_p['Close'].iloc[-1]<sma_30)  :
-					comment = "BUY !!!"
-		
-		pnl = (z*data_p['Close'].iloc[-1])-(z*buy)
-		
-		tr = {"pnl":pnl,"money":i,"quantity":z,"price":data_p['Close'].iloc[-1],"buy_price":buy,"sma_10":sma_10,"sma_20":sma_20,"sma_30":sma_30,"comment":comment}
-		trade.append(tr)
-
-	return json.dumps(trade)
+	return json.dumps(get_budget())

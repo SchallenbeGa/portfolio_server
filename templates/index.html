@@ -25,22 +25,16 @@
     <div class="container">
 	<a href="/edit" class="btn btn-primary my-2">Edit</a>
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
-	  {%for x in trade%}
         <div class="col">
-          <div class="card shadow-sm rounded-5 {%if x['comment'] == 'SELL !!!'%}border-danger{% elif x['comment'] == 'BUY !!!'%}border-success{% else %}border-warning{%endif%}">
+          <div class="card shadow-sm rounded-5">
             <div class="card-body">
-				<h5 class="card-title">{{x['money']}}</h5>
-				<h6 class="card-subtitle mb-2">Last Price : {{x['price']}} $</h6>
-				<h6 class="card-subtitle mb-2">SMA 10 : {{x['sma_10']}}</h6>
-				<h6 class="card-subtitle mb-2">SMA 20 : {{x['sma_20']}}</h6>
-				<h6 class="card-subtitle mb-2">SMA 30 : {{x['sma_30']}}</h6>
-				<p class="card-text">Buy Price : {{x['buy_price']}}</p>
-				<p class="card-text">PNL : {{x['pnl']}}</p>
-				<p class="card-text">{{x['comment']}}</p>
+				<h5 class="card-title">ripple</h5>
+				<h6 class="card-subtitle mb-2">Last Price : $</h6>
+				<h6 class="card-subtitle mb-2">SMA 10 :</h6>
+				<p class="card-text">Buy Price : 10</p>
             </div>
           </div>
         </div>
-		{%endfor%}
       </div>
     </div>
   </div>
