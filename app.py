@@ -55,7 +55,7 @@ def edit():
 @app.route('/edit',methods = ['POST'])
 def save_d():
 
-	money = request.form["money"]
+	money = request.form["money"].lower()
 	buy_price = request.form['buy_price']
 	quantity = request.form['quantity']
 
@@ -73,7 +73,7 @@ def save_d():
 @app.route('/trash',methods = ['POST'])
 def trash():
 	
-	money = request.form["money"]
+	money = request.form["money"].lower()
 
 	trade = []
 	for i,z,buy in currencies.values:
@@ -86,7 +86,7 @@ def trash():
 @app.route('/new',methods = ['POST'])
 def new():
 	
-	money = request.form["money"]
+	money = request.form["money"].lower()
 	buy_price = request.form['buy_price']
 	quantity = request.form['quantity']
 
@@ -154,7 +154,7 @@ def api():
 		for i,z,buy in currencies.values:
 			pat = 'data/'+i+'_'+str(n)+'.csv'
 			if(os.path.exists(pat)):
-				if (int(time.time()) - 60 * 5) > int((os.path.getmtime(pat))):
+				if (int(time.time()) - 60 * 60) > int((os.path.getmtime(pat))):
 					print("download ",n,": ",i)
 					save(i,n,pat)
 			else:
