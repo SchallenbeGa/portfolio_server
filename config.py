@@ -1,0 +1,2 @@
+API_KEY = '39ymxuizXkwZNpM7zkYOfGIbYX3zYwhyapW5EnoFRpLZ23H27ACks51Ll2IVWHhH'
+API_SECRET = 'yourbinanceapisecret'
