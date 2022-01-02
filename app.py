@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
 import datetime
+import mplfinance as mpf
 from pycoingecko import CoinGeckoAPI
 from flask import Flask,render_template,redirect
 from matplotlib.figure import Figure
@@ -43,8 +44,6 @@ def req(money,days):
 # 			this_csv_file.write(line)
 # 			this_csv_file.write('\n')
 
-def get_coin_list():
-	return pd.read_csv('coins.csv')
 #format & save data as tst.csv
 def save(data):
 	line_list=[]
@@ -83,10 +82,11 @@ def s2(data, short_window, long_window,budget_l,nb_trade,ad):
 	trade = []
 	trade_r = []
 	dispo = 0
-
 	for i in range(len(data)):
+		print(i)
 		if sma1[i] > sma2[i]:
-			if signal>0:
+			if (signal>0):
+				print("buy")
 				buy_price.append(data[i])
 				last_buy.append(data[i])
 				last_signal = data[i]
@@ -123,10 +123,12 @@ def s2(data, short_window, long_window,budget_l,nb_trade,ad):
 						slic=(slic/la)*data[i]
 					
 			else:
+				print("norm")
 				buy_price.append(np.nan)
 				sell_price.append(np.nan)
 				sma_signal.append(0)
 		else:
+			print("norm")
 			buy_price.append(np.nan)
 			sell_price.append(np.nan)
 			sma_signal.append(0)
@@ -189,6 +191,7 @@ def brutus(data, short_window, long_window,budget_l,nb_trade,ad):
 				sell_price.append(np.nan)
 				dispo += slic/data[i]
 				signal-=1
+				print(signal)
 				sma_signal.append(signal)
 			else:
 				buy_price.append(np.nan)
@@ -209,17 +212,17 @@ def home():
 @app.route("/<sr>/<version>/<name>/<days>")
 def currency(sr,version,name,days):
 
-	save(req(name,days))
+	#save(req(name,days))
 	data = pd.read_csv('tst.csv').set_index('Date')
 	data.index = pd.to_datetime(data.index)
 
-	n = [10,20,50]
+	n = [5,10,15]
 	for i in n:
 		data[f'sma_{i}'] = sma(data['Close'], i)
 
-	sma_10 = data['sma_10']
-	sma_20 = data['sma_20']
-	sma_50 = data['sma_50']
+	sma_10 = data['sma_5']
+	sma_20 = data['sma_10']
+	sma_50 = data['sma_15']
 
 	switch={
       "1":[1,0],
@@ -237,9 +240,9 @@ def currency(sr,version,name,days):
 		buy_price, sell_price, signal,trade,trade_r,profit = brutus(data['Close'],sma_10, sma_20,budget_l,version[0],version[1])
 	plt.close()
 	f = plt.figure()
+	plt.style.use('ggplot')
 	f.set_figwidth(15)
 	f.set_figheight(7)
-
 	plt.plot(data['Close'], alpha = 0.3, label = 'data')
 	plt.plot(sma_10, alpha = 0.6, label = 'SMA 10')
 	plt.plot(sma_20, alpha = 0.6, label = 'SMA 20')
@@ -257,8 +260,7 @@ def currency(sr,version,name,days):
 	buf = BytesIO()
 	plt.savefig(buf, format="png")
 	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
-	coins = get_coin_list()
-	return render_template("base.html",profit=profit,title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,coins=coins,coins_len=len(coins),sr=sr)
+	return render_template("base.html",profit=profit,title = title,trade_l=len(trade_r),trade = trade_r,dat = dat,currency = name,sr=sr)
 
 if __name__ == '__main__':
    app.run(debug = True)
