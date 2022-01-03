@@ -1,12 +1,6 @@
-import websocket, json, pprint, talib, numpy
-import config
+import websocket, json, config, aiofiles,pandas as pd,asyncio
 from binance.client import Client
 from binance.enums import *
-import aiofiles
-import numpy as np
-import pandas as pd
-import asyncio
-from aiocsv import AsyncWriter
 from datetime import datetime
 
 SOCKET = "wss://stream.binance.com:9443/ws/xrpusdt@kline_1m"
@@ -16,6 +10,7 @@ TRADE_QUANTITY = 20
 signal = 1
 last_buy = 0
 closes = []
+order_id = 0
 in_position = False
 
 async def save(tim,data):
@@ -29,22 +24,21 @@ async def save(tim,data):
 client = Client(config.API_KEY, config.API_SECRET, tld='com')
 
 def order(limit,side, quantity, symbol,order_type=ORDER_TYPE_MARKET):
+    global order_id
     try:
-	if limit > 0:
-		order = client.order_limit_sell(symbol=symbol,quantity=100,price=limit)
-	else:
-        	order = client.create_order(symbol=symbol, side=side, type=order_type, quantity=quantity)
-	print("sending order")
+        if limit > 0:
+            print("test")
+            order = client.create_order(symbol=symbol,side=side,type=ORDER_TYPE_LIMIT,quantity=TRADE_QUANTITY,price=limit,timeInForce=TIME_IN_FORCE_GTC)
+        else:
+            order = client.create_order(symbol=symbol,side=side,type=order_type, quantity=quantity)
+        print("sending order")
         print(order)
+        order_id = order['orderId']
     except Exception as e:
         print("an exception occured - {}".format(e))
         return False
 
     return True
-
-def sma(data, n):
-	sma = data.rolling(window=n).mean()
-	return pd.DataFrame(sma)
     
 def on_open(ws):
     print('opened connection')
@@ -53,76 +47,53 @@ def on_close(ws):
     print('closed connection')
 
 def on_message(ws, message):
-    global closes, in_position, signal, last_buy
-    
-    print('received message')
-    json_message = json.loads(message)
+    global closes, in_position, signal, last_buy,order_id
 
+    json_message = json.loads(message)
     candle = json_message['k']
-    is_candle_closed = candle['x']
-    close = candle['c']
+
     print("----------Save-----------") 
     asyncio.run(save(json_message['E'],candle))
     print("-------------------------")
 
     
     print("---------Analyze---------") 
+
     data = pd.read_csv('tst.csv').set_index('Date')
     data.index = pd.to_datetime(data.index)
 
-    print("okdata")
-
-    n = [5,10,15]
-    for i in n:
-        data[f'sma_{i}'] = sma(data['Close'], i)
-
-    sma_10 = data['sma_5']
-    sma_20 = data['sma_10']
-    sma_30 = data['sma_15']
-  
-    sma1 = sma_10
-    sma2 = sma_20
+    # get price avg for 5-10-30 days
+    sma_5 = pd.DataFrame(data['Close'].rolling(window=10).mean()).max()['Close']
+    sma_10 = pd.DataFrame(data['Close'].rolling(window=20).mean()).max()['Close']
 
     data = data['Close']
 
-    print("Signal :",signal)
-    if(len(data)<20):
-        print("wait",len(data),"/20")
+    if(len(data)<50):# if less than 20 trade wait
+        print("wait",len(data),"/50")
     else:
-        print(sma1[-1])
-        print(sma2[-1])
-        
-    if sma1[-1] > sma2[-1]:
-        if signal>0:
-		order = client.order_limit_sell(
-    symbol='BNBBTC',
-    quantity=100,
-    price='0.00001')
-            order_succeeded = order(0,SIDE_BUY, TRADE_QUANTITY, TRADE_SYMBOL)
-            if order_succeeded:
-                print("buy price : ",data[-1])
-                last_buy = data[-1]
-                signal-=1
-		order_sell = order(last_buy+last_buy*0.003,SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL)
-		if order_sell:
-			print("success sell limit")
-		else:
-			print("fail sell limit)
-            else:
-                print("fail buy")
-        else:
-            print("waiting for sell")
-    elif sma2[-1] > sma1[-1]:
-        if signal < 1:
-            if last_buy<data[-1]:
-                order_succeeded = order(0,SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL)
+        print("current price :",data[-1])
+        print("avg last 10 trade :",sma_5)
+        print("avg last 20 trade :",sma_10)
+      
+        if data[-1] < sma_5: # if last price < last 10 trade's price avg = buy
+            if in_position == False:
+                order_succeeded = order(0,SIDE_BUY, TRADE_QUANTITY, TRADE_SYMBOL)
                 if order_succeeded:
-                    print("sell price : ",data[-1])
-                    signal+=1
+                    in_position = True
+                    order_sell = order(round(data[-1]+data[-1]*0.0007,4),SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL) # sell at : buy price + 0.0007%
+                    if order_sell:
+                        print("success sell limit")
+                    else:
+                        print("fail sell limit")
                 else:
                     print("fail buy")
             else:
-                print("need higher price")
-    print("-------------------------")
+                sorder = client.get_order(symbol=TRADE_SYMBOL,orderId=order_id)
+                if sorder['status'] == 'FILLED':
+                    print("restart please")
+                    in_position = False
+                else:  
+                    print("waiting for sell : ",sorder)
+
 ws = websocket.WebSocketApp(SOCKET, on_open=on_open, on_close=on_close, on_message=on_message)
 ws.run_forever()
