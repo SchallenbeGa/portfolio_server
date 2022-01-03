@@ -28,10 +28,13 @@ async def save(tim,data):
 
 client = Client(config.API_KEY, config.API_SECRET, tld='com')
 
-def order(side, quantity, symbol,order_type=ORDER_TYPE_MARKET):
+def order(limit,side, quantity, symbol,order_type=ORDER_TYPE_MARKET):
     try:
-        print("sending order")
-        order = client.create_order(symbol=symbol, side=side, type=order_type, quantity=quantity)
+	if limit > 0:
+		order = client.order_limit_sell(symbol=symbol,quantity=100,price=limit)
+	else:
+        	order = client.create_order(symbol=symbol, side=side, type=order_type, quantity=quantity)
+	print("sending order")
         print(order)
     except Exception as e:
         print("an exception occured - {}".format(e))
@@ -91,11 +94,20 @@ def on_message(ws, message):
         
     if sma1[-1] > sma2[-1]:
         if signal>0:
-            order_succeeded = order(SIDE_BUY, TRADE_QUANTITY, TRADE_SYMBOL)
+		order = client.order_limit_sell(
+    symbol='BNBBTC',
+    quantity=100,
+    price='0.00001')
+            order_succeeded = order(0,SIDE_BUY, TRADE_QUANTITY, TRADE_SYMBOL)
             if order_succeeded:
                 print("buy price : ",data[-1])
                 last_buy = data[-1]
                 signal-=1
+		order_sell = order(last_buy+last_buy*0.003,SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL)
+		if order_sell:
+			print("success sell limit")
+		else:
+			print("fail sell limit)
             else:
                 print("fail buy")
         else:
@@ -103,7 +115,7 @@ def on_message(ws, message):
     elif sma2[-1] > sma1[-1]:
         if signal < 1:
             if last_buy<data[-1]:
-                order_succeeded = order(SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL)
+                order_succeeded = order(0,SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL)
                 if order_succeeded:
                     print("sell price : ",data[-1])
                     signal+=1
