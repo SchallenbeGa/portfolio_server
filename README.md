@@ -1,4 +1,4 @@
-# portfolio_server
+# AUTOMATE BINANCE BUY/SELL
 
 CONFIG.PY
 
