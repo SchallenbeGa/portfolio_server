@@ -1,5 +1,9 @@
 # portfolio_server
-config.py -> api key
+
+CONFIG.PY
+
+    API_KEY = '39ymxuizXkwZNpM7zkYOfGIbYX3zYwhyapW5EnoFRpLZ23H27ACks51Ll2IVWHhH'
+    API_SECRET = 'yourbinanceapisecret'
 
 VAR
 
@@ -15,8 +19,8 @@ COMMAND
 IMPORT
 
       pip install python-binance (https://python-binance.readthedocs.io/en/latest/index.html)
-                  websocket
-                  json
-                  aiofiles 
-                  pandas (https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html)
-                  asyncio
+      pip install websocket
+      pip install json
+      pip install aiofiles 
+      pip install pandas (https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html)
+      pip install asyncio
