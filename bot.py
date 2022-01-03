@@ -7,14 +7,11 @@ SOCKET = "wss://stream.binance.com:9443/ws/xrpusdt@kline_1m"
 
 TRADE_SYMBOL = 'XRPUSDT'
 TRADE_QUANTITY = 20
-signal = 1
-last_buy = 0
-closes = []
+
 order_id = 0
 in_position = False
 
 async def save(tim,data):
-
     async with aiofiles.open('tst.csv', mode='r') as f:
         contents = await f.read()
         contents = contents+"\n"+str(datetime.utcfromtimestamp(tim/1000))+","+str(data['o'])+","+str(data['h'])+","+str(data['l'])+","+str(data['c'])
@@ -47,7 +44,7 @@ def on_close(ws):
     print('closed connection')
 
 def on_message(ws, message):
-    global closes, in_position, signal, last_buy,order_id
+    global closes, in_position,order_id
 
     json_message = json.loads(message)
     candle = json_message['k']
