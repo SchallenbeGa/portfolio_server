@@ -9,7 +9,7 @@ VAR
 
     SOCKET = "wss://stream.binance.com:9443/ws/xrpusdt@kline_1m"
     TRADE_SYMBOL = 'XRPUSDT'
-    TRADE_QUANTITY = 20
+    TRADE_QUANTITY = 50
 
 COMMAND
 
