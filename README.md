@@ -18,7 +18,7 @@ COMMAND
 
 IMPORT
 
-      pip install python-binance websocket-client aiofiles pandas asyncio
+      pip install python-binance websocket-client aiofiles pandas asyncio aiocsv ta-lib
 
 # https://python-binance.readthedocs.io/en/latest/index.html
 # https://pypi.org/project/websocket-client/
