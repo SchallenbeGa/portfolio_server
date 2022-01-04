@@ -71,11 +71,8 @@ def on_message(ws, message):
     else:
         # get price avg for 5-10-30 days
         #print(pd.DataFrame(data['Close'][-20:].rolling(window=10).mean()))
-        
-        # get price avg for 5-10-30 days
-        sma_5 = pd.DataFrame(data['Close'].rolling(window=10).mean()).max()['Close']
-        sma_10 = pd.DataFrame(data['Close'].rolling(window=20).mean()).max()['Close']
-
+        sma_5 = pd.DataFrame(data['Close'][-20:].rolling(window=15).mean()).max()['Close']
+        sma_10 = pd.DataFrame(data['Close'][-30:].rolling(window=20).mean()).max()['Close']
 
         data = data['Close']
         print("current price :",data[-1])
@@ -89,7 +86,7 @@ def on_message(ws, message):
                     in_position = True
                     asyncio.run(save_trade("buy",data[-1]))
                     print('\a')
-                    order_sell = order(round(data[-1]+data[-1]*0.0002,4),SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL) # sell at : buy price + 0.0007%
+                    order_sell = order(round(data[-1]+data[-1]*0.0005,4),SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL) # sell at : buy price + 0.0005%
                     if order_sell:
                         print("success sell limit")
                     else:
