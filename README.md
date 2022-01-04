@@ -18,9 +18,10 @@ COMMAND
 
 IMPORT
 
-      pip install python-binance (https://python-binance.readthedocs.io/en/latest/index.html)
-      pip install websocket
-      pip install json
-      pip install aiofiles 
-      pip install pandas (https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html)
-      pip install asyncio
+      pip install python-binance,websocket-client,aiofiles,pandas,asyncio
+
+https://python-binance.readthedocs.io/en/latest/index.html
+https://pypi.org/project/websocket-client/
+https://pypi.org/project/aiofiles/
+https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html
+https://pypi.org/project/asyncio/
