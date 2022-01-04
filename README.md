@@ -20,8 +20,8 @@ IMPORT
 
       pip install python-binance,websocket-client,aiofiles,pandas,asyncio
 
-https://python-binance.readthedocs.io/en/latest/index.html \n
-https://pypi.org/project/websocket-client/ \n
-https://pypi.org/project/aiofiles/ \n
-https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html \n
-https://pypi.org/project/asyncio/
+# https://python-binance.readthedocs.io/en/latest/index.html
+# https://pypi.org/project/websocket-client/
+# https://pypi.org/project/aiofiles/
+# https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html
+# https://pypi.org/project/asyncio/
