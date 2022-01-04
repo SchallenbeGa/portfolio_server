@@ -66,8 +66,8 @@ def on_message(ws, message):
     data = pd.read_csv('tst.csv').set_index('Date')
     data.index = pd.to_datetime(data.index)
 
-    if(len(data)<30):# if less than 20 trade wait
-        print("wait",len(data),"/20")
+    if(len(data)<30):# if less than 30 trade wait
+        print("wait",len(data),"/30")
     else:
         # get price avg for 5-10-30 days
         #print(pd.DataFrame(data['Close'][-20:].rolling(window=10).mean()))
