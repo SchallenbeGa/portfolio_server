@@ -86,7 +86,7 @@ def on_message(ws, message):
                     in_position = True
                     asyncio.run(save_trade("buy",data[-1]))
                     print('\a')
-                    order_sell = order(round(data[-1]+data[-1]*0.0005,4),SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL) # sell at : buy price + 0.0005%
+                    order_sell = order(round(data[-1]+data[-1]*0.05,4),SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL) # sell at : buy price + 0.0005%
                     if order_sell:
                         print("success sell limit")
                     else:
