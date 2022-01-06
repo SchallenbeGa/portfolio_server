@@ -26,4 +26,32 @@
 	<body>
 
 		<img class="my-2 w-100" id="myChart" width="900" height="550" src="data:image/png;base64,{{dat}}"/>
+
+		
+		<h2>Trade(s)</h2>
+		<div class="table-responsive">
+			<table class="table table-striped table-sm">
+			<thead>
+				<tr>
+				<th scope="col">#</th>
+				<th scope="col">Date</th>
+				<th scope="col">Order Type</th>
+				<th scope="col">Price</th>
+				<th scope="col">Quantity</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for x in range(trade_l) %}
+					<tr>
+						<td>{{x+1}}</td>
+						<td>{{trade['Date'].get(x)}}</td>
+						<td>{{trade['Type'].get(x)}}</td>
+						<td>{{trade['Price'].get(x)}}</td>
+						<td>{{trade['Quantity'].get(x)}}</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+			</table>
+		</div>
+
 </body>

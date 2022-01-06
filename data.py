@@ -20,7 +20,7 @@ sell_price = 0
 async def save(tim,data):
     async with aiofiles.open('tst.csv', mode='r') as f:
         contents = await f.read()
-        contents = contents+"\n"+str(datetime.utcfromtimestamp(tim/1000))+","+str(data['o'])+","+str(data['h'])+","+str(data['l'])+","+str(data['c'])
+        contents = contents+"\n"+str(datetime.utcfromtimestamp(tim/1000))+","+str(data['o'])+","+str(data['h'])+","+str(data['l'])+","+str(data['c'])+","+str(data['v'])
     async with aiofiles.open('tst.csv', mode='w') as f:
         await f.write(contents)
 
