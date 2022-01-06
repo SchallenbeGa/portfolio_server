@@ -27,6 +27,12 @@ async def save_trade(date_t,b_s,price):
     async with aiofiles.open('trade.csv', mode='w') as f:
         await f.write(contents)
 
+#save sell order form the bot in order.csv
+async def save_order(date_t,price):
+    async with aiofiles.open('order.csv', mode='w') as f:
+        contents = "Date,Price,Quantity"+"\n"+str(str(datetime.utcfromtimestamp(date_t/1000))+","+str(price)+","+str(TRADE_QUANTITY))
+        await f.write(contents)
+
 client = Client(config.API_KEY, config.API_SECRET, tld='com')
 client.API_URL = 'https://testnet.binance.vision/api'#test
 
@@ -70,7 +76,7 @@ def on_message(ws, message):
     print("current price :",close)
     print("cross price   :",sma)
         
-    if close > sma :# if last price < last 10 trade's price avg = buy
+    if close < sma :# if last price < last 10 trade's price avg = buy
         if in_position == False:
             order_succeeded = order(0,SIDE_BUY, TRADE_QUANTITY, TRADE_SYMBOL)
             if order_succeeded:
@@ -79,6 +85,7 @@ def on_message(ws, message):
                 print('\a')
                 order_sell = order(close+0.001,SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL) # sell at : buy price + 0.0005%
                 if order_sell:
+                    asyncio.run(save_order(datetime.now().timestamp()*1000,close+0.001))
                     print("success sell limit")
                 else:
                     print("fail sell limit")

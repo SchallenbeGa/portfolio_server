@@ -16,8 +16,10 @@ def home():
 
 	trade = pd.read_csv('trade.csv')
 
+	order = pd.read_csv('order.csv')
+
 	buf = BytesIO()
-	mpf.plot(data,type='candle',style="charles",volume=True,mav=(3,6,9),figscale=1.25,datetime_format='%I:%M:%S %p',xrotation=0,savefig=buf)
+	mpf.plot(data,type='candle',style="charles",volume=True,mav=(3,6,9),figratio=(18,10),datetime_format='%I:%M:%S %p',xrotation=0,savefig=buf)
 	print(trade['Date'].get(0))
 	dat = base64.b64encode(buf.getbuffer()).decode("ascii")
 	return render_template("base.html",dat = dat,trade=trade,trade_l=len(trade))
