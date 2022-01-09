@@ -144,7 +144,7 @@ def on_message(ws, message):
             print(type(sorder['price']))
             print(type(close))
             if sell_price<=close:
-                tweet = "sell at: "+close
+                tweet = "sell at: "+str(close)
                 api.update_status(tweet)
                 print("selll")
                 print("cross price :",sma)
