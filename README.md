@@ -7,18 +7,22 @@ CONFIG.PY
 
 VAR
 
-    SOCKET = "wss://stream.binance.com:9443/ws/xrpusdt@kline_1m"
-    TRADE_SYMBOL = 'XRPUSDT'
-    TRADE_QUANTITY = 50
+    API_KEY = 'lo82VNWUhkdbYUlANMK5TejscD97tXNaDoTx5WT1Qw6kKPj5k4o1EUglbhvyx06r'
+    API_SECRET = 'secret'
+    PAIR = 'xrpusdt'
+    PAIR_M = 'XRPUSDT'
+    PAIR_S = 'usdt'
+    QUANTITY = '50'
+    DEBUG = True
 
 COMMAND
 
-    python3 bot.py
+    python3 bot.py % python3 app.py
 
 
 IMPORT
 
-      pip install python-binance websocket-client aiofiles pandas asyncio aiocsv ta-lib
+      pip install python-binance websocket-client aiofiles pandas asyncio aiocsv numpy mplfinance
 
 # https://python-binance.readthedocs.io/en/latest/index.html
 # https://pypi.org/project/websocket-client/
