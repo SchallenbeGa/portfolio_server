@@ -1,6 +1,7 @@
 import websocket, json, base64, config, aiofiles,pandas as pd,asyncio,numpy as np,mplfinance as mpf
 from binance.client import Client
 from binance.enums import *
+from binance.helpers import round_step_size
 from datetime import datetime
 from io import BytesIO
 
@@ -14,15 +15,14 @@ from io import BytesIO
 #save
 import tweepy
 
-consumer_key = 'nGZ2GOUt5ZagsdHDKG'
-consumer_secret = 'Yc7iFcuDFlNxQtFLEbEapItOUO9aWaH931VwRdOGjFjgy'
-access_token = '1265285941624811520-tmHLCFcqHfHSQPKplJZ'
-access_token_secret = 'NkvqRUgBuhXtWQWP2j2EHO3S640KOIxDgCaVuGC'
+consumer_key = 'nGZ2GOUnmJheVWj5ZagsKG'
+consumer_secret = 'Yc7iFcuDFlNxQbEapIuSsN7OUO9aWaH931VwRdOGjFjgy'
+access_token = '1265285941624811-yCEprankedSFWmHLCFcqHfHSQPKplJZ'
+access_token_secret = 'NkvqRUgBuhX9WQWP2j2EHO3S640KOIxDgCaVuGC'
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
-
 
 SOCKET = "wss://stream.binance.com:9443/ws/"+config.PAIR+"@kline_1m"
 
@@ -30,8 +30,9 @@ TRADE_SYMBOL = config.PAIR_M
 TRADE_QUANTITY = config.QUANTITY
 TEST = config.DEBUG
 
-sma_d = 8
-added_val = 0.002
+sma_d = 3
+sma_l = 5
+added_val = 0.0004
 order_id = 0
 in_position = False
 sell_price = 0
@@ -53,7 +54,7 @@ with open("order.csv", "w") as f:
 
 
 ##tweet graph img
-def twet_graph(tweet_content):
+async def twet_graph(tweet_content,fav):
     global api,sma_d
     print("start graph")
     data = pd.read_csv('tst.csv').set_index('Date')
@@ -89,15 +90,14 @@ def twet_graph(tweet_content):
                         print(data['Low'][i])
                         print(trade['Price'][x])	
                         if(trade['Type'][x]=="buy"):
-                            buy.append(trade['Price'][x]-0.0005)
+                            buy.append(trade['Price'][x]-0.002)
                         else:
-                            sell.append(trade['Price'][x]+0.0005)
+                            sell.append(trade['Price'][x]+0.002)
+                            sell.append(np.nan)
             if not is_done:
                 buy.append(np.nan)
                 sell.append(np.nan)
-        if len(trade)>1:
-            if len(trade)%2 != 0:
-                sell.append(np.nan)
+        
         for x in range(int((len(trade)-2)/2)):
             buy.append(np.nan)
             sell.append(np.nan)
@@ -125,7 +125,7 @@ def twet_graph(tweet_content):
             type='candle',
             volume=True,
             style=s,
-            mav=(8),
+            mav=(8,10),
             figscale=1,
             figratio=(20,10),
             datetime_format="%d %H:%M:%S",
@@ -138,7 +138,7 @@ def twet_graph(tweet_content):
             type='candle',
             volume=True,
             style=s,
-            mav=(8),
+            mav=(8,10),
             figratio=(20,10),
             datetime_format="%d %H:%M:%S",
             xrotation=0,
@@ -148,7 +148,10 @@ def twet_graph(tweet_content):
     order = pd.read_csv('order.csv')
     dat = base64.b64encode(buf.getbuffer()).decode("ascii")
 
-    api.update_status_with_media(tweet_content,"tweettest.png")
+    id = api.update_status_with_media(tweet_content,"tweettest.png").id
+    if fav:
+        api.create_favorite(id)
+    return id
 
 #save trade form the bot in trade.csv
 async def save_trade(b_s,price):
@@ -175,7 +178,7 @@ async def save_data():
         for line in klines:
             await f.write(f'\n{datetime.fromtimestamp(line[0]/1000)}, {line[1]}, {line[2]}, {line[3]}, {line[4]},{line[5]}')
 
-async def save_close(tim,data):
+async def save_close(data):
     async with aiofiles.open('tst.csv', mode='r') as f:
         contents = await f.read()
         now = datetime.now()
@@ -205,6 +208,8 @@ client_data = Client(config.API_KEY, config.API_SECRET, tld='com')
 asyncio.run(save_data())
 if TEST :
     client.API_URL = 'https://testnet.binance.vision/api'#test
+       
+
 
 def on_open(ws):
     print('opened connection')
@@ -213,8 +218,8 @@ def on_close(ws):
     print('closed connection')
 
 def on_message(ws, message):
-    global in_position,order_id,sell_price,api,added_val,sma_d
-
+    global in_position,order_id,sell_price,api,added_val,sma_d,sma_l
+    # get balances for all assets & some account information
     json_message = json.loads(message)  
     candle = json_message['k']
     is_candle_closed = candle['x']
@@ -226,35 +231,37 @@ def on_message(ws, message):
     data.index = pd.to_datetime(data.index)
 
     sma = data['Close'][-sma_d:].mean()
+    sma_long = data['Close'][-sma_l:].mean()
     close = float(candle['c'])
 
     if (is_candle_closed):
         if in_position:
             if data['Close'][-1]-(sell_price-added_val) <0:
                 print((data['Close'][-1]*float(TRADE_QUANTITY))-((sell_price-added_val)*float(TRADE_QUANTITY)))
-                tweet = "buy at : "+str(sell_price-added_val)+"\nlast price : "+str(data['Close'][-1])+"\nactual loss : -"+str(((sell_price-added_val)*float(TRADE_QUANTITY))-(data['Close'][-1]*float(TRADE_QUANTITY)))
+                tweet = "buy at : "+str(sell_price-added_val)+"\nquantity("+config.PAIR_B+") : "+str(TRADE_QUANTITY)+"\nlast price : "+str(data['Close'][-1])+"\nactual loss : -"+str(((sell_price-added_val)*float(TRADE_QUANTITY))-(data['Close'][-1]*float(TRADE_QUANTITY)))
             else:
-                tweet = "buy at : "+str(sell_price-added_val)+"\nlast price : "+str(data['Close'][-1])+"\nactual profit : "+str((data['Close'][-1]*float(TRADE_QUANTITY))-((sell_price-added_val)*float(TRADE_QUANTITY)))
+                tweet = "buy at : "+str(sell_price-added_val)+"\nquantity("+config.PAIR_B+") : "+str(TRADE_QUANTITY)+"\nlast price : "+str(data['Close'][-1])+"\nactual profit : "+str((data['Close'][-1]*float(TRADE_QUANTITY))-((sell_price-added_val)*float(TRADE_QUANTITY)))
             tweet+="\nsell limit at : "+str(sell_price)
-            twet_graph(tweet)
-        else:
-            twet_graph("waiting... need to cross blue line\nactual price : "+str(data['Close'][-1])+"\ncross price : "+str(sma))
+            #twet_graph(tweet)
+       #else:
+        #    twet_graph("waiting... need to cross blue line\nactual price : "+str(data['Close'][-1])+"\ncross price : "+str(sma))
 
     print("current price :",close)
-    print("cross price   :",sma)
+    print("lower than : ",sma_long," higher than : ",sma)
 
     if in_position:
         sorder = client.get_order(symbol=TRADE_SYMBOL,orderId=order_id)
         if TEST:
             if sell_price<=close:
-                tweet = "sell at: "+str(close)+"\nprofit : "+str((close*float(TRADE_QUANTITY))-((sell_price-added_val)*float(TRADE_QUANTITY)))
-                api.update_status(tweet)
+                asyncio.run(save_close(candle))
+                tweet = "buy at :"+str(sell_price-added_val)+"\nsell at : "+str(close)+"\nprofit : "+str((close*float(TRADE_QUANTITY))-((sell_price-added_val)*float(TRADE_QUANTITY)))
                 print("cross price :",sma)
                 print(sorder['price'])
                 asyncio.run(save_trade("sell",sorder['price']))
                 print('\a')
                 print('\a')
                 in_position = False
+                asyncio.run(twet_graph(tweet,True))
                 with open("order.csv", "w") as f:
                     f.write("Date,Type,Price,Quantity\n")
         else: 
@@ -266,18 +273,21 @@ def on_message(ws, message):
             else:  
                 print("waiting for sell : ",sorder)
  
-    if (close < sma):# if last price < last 10 trade's price avg = buy
+    if (close < sma_long) & (close > sma):# if last price < last 10 trade's price avg = buy
         if in_position == False:
             order_succeeded = order(0,SIDE_BUY, TRADE_QUANTITY, TRADE_SYMBOL)
             if order_succeeded:
                 in_position = True
-                tweet = "buy at: "+str(close)
-                api.update_status(tweet)
+                tweet = "buy at : "+str(close)+"\nsell limit at : "+str(close+added_val)
+               #api.update_status(tweet)
                 asyncio.run(save_trade("buy",close))
                 sell_price = close+added_val
-                order_sell = order(close+added_val,SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL) # sell at : buy price + added_val
+                print(tweet)
+                lim = round_step_size(close + added_val,float(client.get_symbol_info(config.PAIR_M)['filters'][0]["tickSize"]))
+                order_sell = order(lim,SIDE_SELL, TRADE_QUANTITY, TRADE_SYMBOL) # sell at : buy price + added_val
                 if order_sell:
                     asyncio.run(save_order(close+added_val))
+                    asyncio.run(twet_graph(tweet,False))
                     print("success sell limit")
                 else:
                     print("fail sell limit")
