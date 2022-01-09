@@ -3,6 +3,7 @@ from binance.client import Client
 from binance.enums import *
 from datetime import datetime
 from dateutil import tz
+import time
 
 SOCKET = "wss://stream.binance.com:9443/ws/"+config.PAIR+"@kline_1m"
 
@@ -48,7 +49,7 @@ async def save_order(price):
         await f.write("Date,Price,Quantity"+"\n"+str(str(current_time)+","+str(price)+","+str(TRADE_QUANTITY)))
         
 async def save_data():
-    klines = client_data.get_historical_klines(config.PAIR_M, Client.KLINE_INTERVAL_1MINUTE, "1 day ago UTC")
+    klines = client_data.get_historical_klines(config.PAIR_M, Client.KLINE_INTERVAL_1MINUTE, "1 hour ago UTC")
     async with aiofiles.open('tst.csv', mode='w') as f:
         await f.write("Date,Open,High,Low,Close,Volume")
         for line in klines:
@@ -92,15 +93,57 @@ def on_open(ws):
 def on_close(ws):
     print('closed connection')
 
+PAIR_WITH = 'USDT'
+QUANTITY = TRADE_QUANTITY
+FIATS = ['EURUSDT', 'GBPUSDT', 'JPYUSDT', 'USDUSDT', 'DOWN', 'UP']
+TIME_DIFFERENCE = 1
+CHANGE_IN_PRICE = 1
+
+
+def get_price():
+    '''Return the current price for all coins on binance'''
+
+    initial_price = {}
+    prices = client.get_all_tickers()
+
+    for coin in prices:
+
+        # only Return USDT pairs and exlcude margin symbols like BTCDOWNUSDT
+        if PAIR_WITH in coin['symbol'] and all(item not in coin['symbol'] for item in FIATS):
+            initial_price[coin['symbol']] = { 'price': coin['price'], 'time': datetime.now()}
+
+    return initial_price
+initial_price = get_price()
+def wait_for_price():
+    global initial_price
+    volatile_coins = {}
+    last_price = get_price()
+
+    # calculate the difference between the first and last price reads
+    for coin in initial_price:
+        threshold_check = (float(initial_price[coin]['price']) - float(last_price[coin]['price'])) / float(last_price[coin]['price']) * 100
+
+        # each coin with higher gains than our CHANGE_IN_PRICE is added to the volatile_coins dict
+        if threshold_check > CHANGE_IN_PRICE:
+            volatile_coins[coin] = threshold_check
+            volatile_coins[coin] = round(volatile_coins[coin], 3)
+
+            print(f'{coin} has gained {volatile_coins[coin]}% in the last minutes, calculating volume in {PAIR_WITH}')
+
+    if len(volatile_coins) < 1:
+            print(f'No coins moved more than {CHANGE_IN_PRICE}% in the last minute(s)')
+    return volatile_coins, len(volatile_coins), last_price
+
+
 def on_message(ws, message):
-    global in_position,order_id,sell_price
+    global in_position,order_id,sell_price,initial_price
 
     json_message = json.loads(message)  
     candle = json_message['k']
     is_candle_closed = candle['x']
-    #if (is_candle_closed):
-    asyncio.run(save_data())
-
+    if (is_candle_closed):
+        thecoins, thecoins_l,last_p = wait_for_price()
+    #asyncio.run(save_data())
     #asyncio.run(save_close(json_message['E'],candle))
     data = pd.read_csv('tst.csv').set_index('Date')
     data.index = pd.to_datetime(data.index)
@@ -115,8 +158,6 @@ def on_message(ws, message):
         sorder = client.get_order(symbol=TRADE_SYMBOL,orderId=order_id)
         if TEST:
             print("Ready")
-            print(type(sorder['price']))
-            print(type(close))
             if sell_price<=close:
                 print("selll")
                 print("cross price :",sma)
@@ -127,6 +168,8 @@ def on_message(ws, message):
                 in_position = False
                 with open("order.csv", "w") as f:
                     f.write("Date,Type,Price,Quantity\n")
+            else:
+                print("need higher price")
         else: 
             if sorder['status'] == 'FILLED':
                 print("cross price :",sma)

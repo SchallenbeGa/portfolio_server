@@ -1,5 +1,4 @@
 import pandas as pd
-from bot import TRADE_QUANTITY
 import numpy as np
 import mplfinance as mpf
 import base64
@@ -31,10 +30,11 @@ def home():
 		sell = []
 		trade_f = []
 		for x in range(len(trade)):
-			if(x<len(trade)):
-				gains.append(trade['Price'][x+1]*config.TRADE_QUANTITY-trade['Price'][x+1]*config.TRADE_QUANTITY)
-
-			fees.append(((trade['Price'][x]*config.TRADE_QUANTITY)/100)*0.1)
+			if len(trade)>1:
+				if(x<=len(trade)-2):
+					print(trade['Price'][x])
+					gains.append(trade['Price'][x+1]*int(config.QUANTITY)-trade['Price'][x]*int(config.QUANTITY))
+			fees.append(((trade['Price'][x]*int(config.QUANTITY))/100)*0.1)
 			trade_f.append(datetime.datetime.strptime(trade_d['Date'][x],"%Y-%m-%d %H:%M:%S").minute)
 
 		for i in range(len(data)):
@@ -77,7 +77,6 @@ def home():
 				sell_n+=1
 
 		if sell_n>0:
-			print("wat")
 			apd = [
 				mpf.make_addplot(buy, scatter=True, markersize=200, marker=r'^', color='green'),
 				mpf.make_addplot(sell, scatter=True, markersize=200, marker=r'v', color='red')
