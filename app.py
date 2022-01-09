@@ -93,7 +93,7 @@ def home():
 			mav=(8),
 			figscale=1,
 			figratio=(20,10),
-			datetime_format="%m-%d %H:%M:%S",
+			datetime_format="%d %H:%M:%S",
 			xrotation=0,
 			returnfig=True)
 		fig.savefig(buf,facecolor='#282828')
@@ -105,7 +105,7 @@ def home():
 			style=s,
 			mav=(8),
 			figratio=(20,10),
-			datetime_format="%m-%d %H:%M:%S",
+			datetime_format="%d %H:%M:%S",
 			xrotation=0,
 			returnfig=True)
 		fig.savefig(buf,facecolor='#282828')

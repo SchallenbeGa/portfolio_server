@@ -4,6 +4,26 @@ from binance.enums import *
 from datetime import datetime
 from dateutil import tz
 
+#https://developer.twitter.com/
+#https://developer.twitter.com/en/apps
+#click on app and write "auth-settings" in url,
+#https://developer.twitter.com/en/portal/projects/xxxx/apps/xxxx/ <- !auth-settings
+#oauth 1.0a put on
+#Callback URI / Redirect URL -> http://twitter.com
+#Website URL -> http://twitter.com
+#save
+import tweepy
+
+consumer_key = 'nGZ2GOUnmJhsecretagsdHDKG'
+consumer_secret = 'Yc7iFcuDFlNxQsecretdOGjFjgy'
+access_token = '126528594162481152secretcjINAvSFWmHLCFcqHfHSQPKplJZ'
+access_token_secret = 'NkvqRUgBuhX9xSAjCDWsecret2EHO3S640KOIxDgCaVuGC'
+
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_token_secret)
+api = tweepy.API(auth)
+
+
 SOCKET = "wss://stream.binance.com:9443/ws/"+config.PAIR+"@kline_1m"
 
 TRADE_SYMBOL = config.PAIR_M
@@ -48,7 +68,7 @@ async def save_order(price):
         await f.write("Date,Price,Quantity"+"\n"+str(str(current_time)+","+str(price)+","+str(TRADE_QUANTITY)))
         
 async def save_data():
-    klines = client_data.get_historical_klines(config.PAIR_M, Client.KLINE_INTERVAL_1MINUTE, "1 day ago UTC")
+    klines = client_data.get_historical_klines(config.PAIR_M, Client.KLINE_INTERVAL_1MINUTE, "1 hour ago UTC")
     async with aiofiles.open('tst.csv', mode='w') as f:
         await f.write("Date,Open,High,Low,Close,Volume")
         for line in klines:
@@ -93,12 +113,12 @@ def on_close(ws):
     print('closed connection')
 
 def on_message(ws, message):
-    global in_position,order_id,sell_price
+    global in_position,order_id,sell_price,api
 
     json_message = json.loads(message)  
     candle = json_message['k']
     is_candle_closed = candle['x']
-    #if (is_candle_closed):
+
     asyncio.run(save_data())
 
     #asyncio.run(save_close(json_message['E'],candle))
@@ -107,6 +127,12 @@ def on_message(ws, message):
 
     sma = data['Close'][-8:].mean()
     close = float(candle['c'])
+
+    if (is_candle_closed):
+        if in_position:
+            print("okay")
+            tweet = "buy at : "+str(sell_price-0.002)+"\nlast price : "+str(data['Close'][-1])+"\nactual profit : "+str(data['Close'][1]-(sell_price-0.002))
+            api.update_status(tweet)
 
     print("current price :",close)
     print("cross price   :",sma)
@@ -118,6 +144,8 @@ def on_message(ws, message):
             print(type(sorder['price']))
             print(type(close))
             if sell_price<=close:
+                tweet = "sell at: "+close
+                api.update_status(tweet)
                 print("selll")
                 print("cross price :",sma)
                 print(sorder['price'])
@@ -144,6 +172,8 @@ def on_message(ws, message):
             if order_succeeded:
                 in_position = True
                 print("here")
+                tweet = "buy at: "+str(close)
+                api.update_status(tweet)
                 asyncio.run(save_trade("buy",close))
                 print("hoo")
                 print('\a')
