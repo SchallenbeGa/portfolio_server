@@ -2,4 +2,6 @@ API_KEY = 'lo82VNWUhkdbYUlANMK5TejscD97tXNaDoTx5WT1Qw6kKPj5k4o1EUglbhvyx06r'
 API_SECRET = 'DDv2URKsjFuja4ptU7AE4nXybywEp9pnIfGviuEZYrAAMKCdpuP15mp3z7ES2UeY'
 PAIR = 'xrpusdt'
 PAIR_M = 'XRPUSDT'
-QUANTITY = '20'
+PAIR_S = 'usdt'
+QUANTITY = '50'
+DEBUG = True

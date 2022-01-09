@@ -3,14 +3,6 @@ from binance.client import Client
 from binance.enums import *
 from datetime import datetime
 
-with open("tst.csv", "r") as f:
-    data = f.readlines()
-
-with open("tst.csv", "w") as f:
-    for line in data :
-        if line.strip("\n") == "Date,Open,High,Low,Close,Volume" : 
-            f.write(line)
-
 SOCKET = "wss://stream.binance.com:9443/ws/"+config.PAIR+"@kline_1m"
 
 order_id = 0
@@ -18,11 +10,13 @@ in_position = False
 sell_price = 0
 
 async def save(tim,data):
-    async with aiofiles.open('tst.csv', mode='r') as f:
-        contents = await f.read()
-        contents = contents+"\n"+str(datetime.utcfromtimestamp(tim/1000))+","+str(data['o'])+","+str(data['h'])+","+str(data['l'])+","+str(data['c'])+","+str(data['v'])
+
+    klines = client.get_historical_klines(config.PAIR_M, Client.KLINE_INTERVAL_1MINUTE, "1 day ago UTC")
+    print(klines)
     async with aiofiles.open('tst.csv', mode='w') as f:
-        await f.write(contents)
+        await f.write("Date,Open,High,Low,Close,Volume")
+        for line in klines:
+            await f.write(f'\n{datetime.utcfromtimestamp(line[0]/1000)}, {line[1]}, {line[2]}, {line[3]}, {line[4]},{line[5]}')
 
 client = Client(config.API_KEY, config.API_SECRET, tld='com')
     
@@ -38,9 +32,10 @@ def on_message(ws, message):
     json_message = json.loads(message)
     candle = json_message['k']
     is_candle_closed = candle['x']
+    asyncio.run(save(json_message['E'],candle))
     if is_candle_closed:
         print("----------Save-----------") 
-        asyncio.run(save(json_message['E'],candle))
+        
         print("-------------------------")
     else:
         print("waiting for candle to close")
