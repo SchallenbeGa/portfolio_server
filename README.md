@@ -22,7 +22,7 @@ COMMAND
 
 IMPORT
 
-      pip install python-binance websocket-client aiofiles pandas asyncio aiocsv numpy mplfinance
+      pip install python-binance websocket-client aiofiles pandas asyncio aiocsv numpy mplfinance tweepy
 
 # https://python-binance.readthedocs.io/en/latest/index.html
 # https://pypi.org/project/websocket-client/
