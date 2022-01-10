@@ -43,9 +43,14 @@ click on app and replace "setting" by "auth-settings" in url,
 
 # LIBRARIES
 
-* https://python-binance.readthedocs.io/en/latest/index.html
-* https://pypi.org/project/websocket-client/
-* https://pypi.org/project/aiofiles/
-* https://pypi.org/project/asyncio/
-* https://github.com/matplotlib/mplfinance
-* https://docs.tweepy.org/en/stable/
+ * https://python-binance.readthedocs.io/en/latest/index.html
+ * https://pypi.org/project/websocket-client/
+ * https://pypi.org/project/aiofiles/
+ * https://pypi.org/project/asyncio/
+ * https://github.com/matplotlib/mplfinance
+ * https://docs.tweepy.org/en/stable/
+
+# PROBLEM
+
+## in test
+ * If insufficient balance -> python3 WARNING_TEST_ONLY.py (it will sell all config.pair_B for config.pair_S)
