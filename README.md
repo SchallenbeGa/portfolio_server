@@ -13,7 +13,7 @@ CONFIG.PY
 COMMAND
 
     python3 bot.py
-    python3 app.py
+    python3 app.py (web server)
 
 
 IMPORT

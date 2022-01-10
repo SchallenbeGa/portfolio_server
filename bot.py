@@ -30,9 +30,9 @@ TRADE_SYMBOL = config.PAIR_M
 TRADE_QUANTITY = config.QUANTITY
 TEST = config.DEBUG
 
-sma_d = 3
-sma_l = 5
-added_val = 0.0004
+sma_d = 2
+sma_l = 3
+added_val = 0.0001
 order_id = 0
 in_position = False
 sell_price = 0
@@ -93,7 +93,6 @@ async def twet_graph(tweet_content,fav):
                             buy.append(trade['Price'][x]-0.002)
                         else:
                             sell.append(trade['Price'][x]+0.002)
-                            sell.append(np.nan)
             if not is_done:
                 buy.append(np.nan)
                 sell.append(np.nan)
@@ -112,6 +111,7 @@ async def twet_graph(tweet_content,fav):
                 sell_n+=1
 
         if sell_n>0:
+            sell.append(np.nan)
             apd = [
                 mpf.make_addplot(buy, scatter=True, markersize=200, marker=r'^', color='green'),
                 mpf.make_addplot(sell, scatter=True, markersize=200, marker=r'v', color='red')
@@ -208,7 +208,7 @@ client_data = Client(config.API_KEY, config.API_SECRET, tld='com')
 asyncio.run(save_data())
 if TEST :
     client.API_URL = 'https://testnet.binance.vision/api'#test
-       
+    
 
 
 def on_open(ws):
@@ -253,7 +253,7 @@ def on_message(ws, message):
         sorder = client.get_order(symbol=TRADE_SYMBOL,orderId=order_id)
         if TEST:
             if sell_price<=close:
-                asyncio.run(save_close(candle))
+                #asyncio.run(save_close(candle))
                 tweet = "buy at :"+str(sell_price-added_val)+"\nsell at : "+str(close)+"\nprofit : "+str((close*float(TRADE_QUANTITY))-((sell_price-added_val)*float(TRADE_QUANTITY)))
                 print("cross price :",sma)
                 print(sorder['price'])
