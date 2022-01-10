@@ -33,7 +33,13 @@ click on app and replace "setting" by "auth-settings" in url,
 
         Callback URI / Redirect URL -> http://twitter.com
         Website URL -> http://twitter.com
-Copy\paste all key 
+        
+        
+        consumer_key = 'nGZ2GOUnmJheVWj5ZagsKG'
+        consumer_secret = 'Yc7iFcuDFlNxQbEapIuSsN7OUO9aWaH931VwRdOGjFjgy'
+        access_token = '1265285941624811-yCEprankedSFWmHLCFcqHfHSQPKplJZ'
+        access_token_secret = 'NkvqRUgBuhX9WQWP2j2EHO3S640KOIxDgCaVuGC'
+
 
 # LIBRARIES
 
