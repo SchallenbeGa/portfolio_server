@@ -15,10 +15,10 @@ from io import BytesIO
 #save
 import tweepy
 
-consumer_key = 'nGZ2GOUnmJheVWj5ZagsKG'
-consumer_secret = 'Yc7iFcuDFlNxQbEapIuSsN7OUO9aWaH931VwRdOGjFjgy'
-access_token = '1265285941624811-yCEprankedSFWmHLCFcqHfHSQPKplJZ'
-access_token_secret = 'NkvqRUgBuhX9WQWP2j2EHO3S640KOIxDgCaVuGC'
+consumer_key = config.C_KEY
+consumer_secret = config.C_SECRET
+access_token = config.A_T
+access_token_secret = config.A_T_S
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
