@@ -35,7 +35,7 @@ click on app and replace "setting" by "auth-settings" in url,
         Website URL -> http://twitter.com
 Copy\paste all key 
 
-# Lib
+# LIBRARIES
 
 * https://python-binance.readthedocs.io/en/latest/index.html
 * https://pypi.org/project/websocket-client/
