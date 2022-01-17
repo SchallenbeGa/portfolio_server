@@ -20,10 +20,10 @@ TRADE_QUANTITY = config.QUANTITY
 TEST = config.DEBUG
 
 # get average price for x last trade
-sma_d = 2 
-sma_l = 3
+sma_d = 2
+sma_l = 30
 # define the difference between buy/sell price
-added_val = 100
+added_val = 0.001
 # contain id of sell limit order
 order_id = 0
 in_position = False
@@ -156,9 +156,9 @@ async def twet_graph(tweet_content,fav):
     fig.savefig('tweettest.png',facecolor='#282828')
 
     # post graph on twitter and get id
-    #id = api.update_status_with_media(tweet_content,"tweettest.png").id
-    #if fav:
-    #    api.create_favorite(id)
+    id = api.update_status_with_media(tweet_content,"tweettest.png").id
+    if fav:
+        api.create_favorite(id)
 
     print("save graph")
 
@@ -224,6 +224,10 @@ def on_message(ws, message):
     json_message = json.loads(message)  
     candle = json_message['k']
 
+    is_candle_closed = candle['x']
+    if is_candle_closed:
+        asyncio.run(twet_graph(":)",False))
+        
     # run save older data 
     asyncio.run(save_data())
 
@@ -238,7 +242,7 @@ def on_message(ws, message):
     # retrieve last close price
     close = float(candle['c'])
 
-    asyncio.run(twet_graph("test",True))
+    #asyncio.run(twet_graph("test",True))
 
     print("current price :",close)
     print("lower than : ",sma_long," higher than : ",sma)
@@ -251,7 +255,7 @@ def on_message(ws, message):
             in_position = False
 
             # save graph (post on twitter)
-            asyncio.run(twet_graph(sorder['price'],True))
+            # asyncio.run(twet_graph(str(sorder['price']),True))
 
             # save sell trade in trade.csv
             asyncio.run(save_trade("sell",sorder['price']))
@@ -259,7 +263,7 @@ def on_message(ws, message):
             print("waiting for sell : ",sorder)
     else:
     # buy section
-        if close > sma:
+        if (close > sma) & (close < sma_long):
             order_succeeded = order(0,SIDE_BUY, TRADE_QUANTITY, TRADE_SYMBOL)
             if order_succeeded:
                 in_position = True
@@ -279,7 +283,7 @@ def on_message(ws, message):
                 # check if order had been placed
                 if order_sell_limit:
                     # save graph (post on twitter)
-                    asyncio.run(twet_graph("sell",False))
+                    # asyncio.run(twet_graph("buy",False))
                     print("success sell limit")
                 else:
                     print("fail sell limit")
